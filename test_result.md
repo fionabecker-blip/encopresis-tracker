@@ -121,37 +121,46 @@
 ## frontend:
 ##   - task: "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
 ##     implemented: true
-##     working: "NA"
+##     working: false
 ##     file: "/app/frontend/app/(tabs)/index.tsx"
-##     stuck_count: 0
+##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Implemented daily log UI with partial fields and no BM option."
+##       - working: false
+##         agent: "testing"
+##         comment: "BLOCKED: Cannot test UI due to infrastructure issue. Preview URL shows placeholder instead of Expo app. Code review shows comprehensive implementation: form with accidents/leaks/BM type fields, segmented controls for yes/no selections, proper API integration to POST /entries, form reset after save, loading states. Implementation appears correct but needs tunnel/proxy fix to test functionality."
 ##   - task: "History list with export CSV/PDF"
 ##     implemented: true
-##     working: "NA"
+##     working: false
 ##     file: "/app/frontend/app/(tabs)/history.tsx"
-##     stuck_count: 0
+##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Added history cards and shareable CSV/PDF export."
+##       - working: false
+##         agent: "testing"
+##         comment: "BLOCKED: Cannot test UI due to infrastructure issue. Code review shows complete implementation: fetches entries from GET /entries API, renders cards with all entry details, Export CSV/PDF buttons using expo-sharing, proper error handling. Implementation looks correct but needs tunnel/proxy fix to test functionality."
 ##   - task: "Settings for units and reminders"
 ##     implemented: true
-##     working: "NA"
+##     working: false
 ##     file: "/app/frontend/app/(tabs)/settings.tsx"
-##     stuck_count: 0
+##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Added unit toggles, reminder time, notification scheduling."
+##       - working: false
+##         agent: "testing"
+##         comment: "BLOCKED: Cannot test UI due to infrastructure issue. Code review shows complete implementation: water/fiber unit toggles, reminder on/off toggle, time input field, expo-notifications integration with permission requests, settings persistence via AsyncStorage. Implementation appears comprehensive but needs tunnel/proxy fix to test functionality."
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
@@ -162,7 +171,10 @@
 ##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
 ##     - "History list with export CSV/PDF"
 ##     - "Settings for units and reminders"
-##   stuck_tasks: []
+##   stuck_tasks:
+##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
+##     - "History list with export CSV/PDF"
+##     - "Settings for units and reminders"
 ##   test_all: true
 ##   test_priority: "high_first"
 ## agent_communication:
@@ -170,3 +182,5 @@
 ##     message: "Implemented backend CRUD and frontend tabs (log/history/settings), added exports and notifications. Screenshot captured before agent testing."
 ##   - agent: "testing"
 ##     message: "Backend CRUD testing complete - ALL TESTS PASSED ✅. Tested all daily entry operations: POST with minimal/full fields, GET list/individual, PUT updates, DELETE operations, and error handling. API fully functional at /api/entries endpoint. Ready for frontend testing or main agent can finish if no UI testing needed."
+##   - agent: "testing"
+##     message: "CRITICAL ISSUE: Frontend UI testing blocked by infrastructure issue. Preview URL https://fiber-track-3.preview.emergentagent.com shows placeholder 'Start building apps on emergent' screen instead of Expo app. Expo is running locally on port 3000 and serving content correctly, but tunnel/proxy routing is not working. All frontend tasks need routing fix before UI testing can proceed. Code review shows comprehensive implementation of Daily Log form, History with export buttons, and Settings with unit toggles and reminders."
