@@ -234,14 +234,10 @@
 ##   test_sequence: 2
 ##   run_ui: false
 ## test_plan:
-##   current_focus:
-##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
-##     - "History list with export CSV/PDF"
-##     - "Progress chart for leaks/enema/SP"
-##     - "Resources tab (external links)"
+##   current_focus: []
 ##   stuck_tasks: []
-##   test_all: true
-##   test_priority: "high_first"
+##   test_all: false
+##   test_priority: "completed"
 ## agent_communication:
 ##   - agent: "main"
 ##     message: "Implemented backend CRUD and frontend tabs (log/history/settings), added exports and notifications. Screenshot captured before agent testing."

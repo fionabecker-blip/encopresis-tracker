@@ -50,6 +50,11 @@ const getMedList = (value) => {
   return [value];
 };
 
+const normalizeMed = (value) => {
+  if (!value) return "";
+  return value.toLowerCase();
+};
+
 export default function ProgressScreen() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -93,8 +98,8 @@ export default function ProgressScreen() {
 
   const medsMetrics = medsOptions.map((option) => {
     const related = entries.filter((entry) => {
-      const meds = getMedList(entry.medication);
-      return meds.includes(option.value);
+      const meds = getMedList(entry.medication).map(normalizeMed);
+      return meds.includes(normalizeMed(option.value));
     });
     const leaks = related.filter((entry) => entry.leaks).length;
     const sp = related.filter((entry) =>
