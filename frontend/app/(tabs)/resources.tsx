@@ -9,6 +9,11 @@ const resources = [
     url: "https://www.cincinnatichildrens.org/health/e/encopresis",
   },
   {
+    title: "Encopresis video playlist",
+    description: "Educational video series for families and caregivers.",
+    url: "https://youtube.com/playlist?list=PLgtX5DuiGvS4PB8Jv50q1KjM0xzKsCw4j&si=EfR6r-2yEcBLPC-H",
+  },
+  {
     title: "Bowel management routines",
     description: "Placeholder protocol checklist and tips.",
     url: "https://example.com/bowel-management",
