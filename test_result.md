@@ -215,7 +215,7 @@
 ##     file: "/app/frontend/app/(tabs)/progress.tsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: true
+##     needs_retesting: false
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
@@ -278,7 +278,7 @@
 ##   current_focus: []
 ##   stuck_tasks: []
 ##   test_all: false
-##   test_priority: "high_first"
+##   test_priority: "completed"
 ## agent_communication:
 ##   - agent: "main"
 ##     message: "Implemented backend CRUD and frontend tabs (log/history/settings), added exports and notifications. Screenshot captured before agent testing."
