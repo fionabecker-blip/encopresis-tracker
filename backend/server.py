@@ -48,6 +48,7 @@ class EntryBase(BaseModel):
     fiber_intake: Optional[float] = None
     water_unit: Optional[str] = None
     fiber_unit: Optional[str] = None
+    motility_foods: Optional[List[str]] = None
     activity_30_min: Optional[bool] = None
     notes: Optional[str] = None
 
@@ -68,6 +69,7 @@ class EntryUpdate(BaseModel):
     fiber_intake: Optional[float] = None
     water_unit: Optional[str] = None
     fiber_unit: Optional[str] = None
+    motility_foods: Optional[List[str]] = None
     activity_30_min: Optional[bool] = None
     notes: Optional[str] = None
 

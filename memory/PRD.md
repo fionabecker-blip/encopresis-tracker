@@ -11,7 +11,7 @@ Parents treating encopresis need an easy mobile app to log daily accidents, bowe
 - **Exports:** CSV + PDF sharing via expo-print + expo-sharing
 
 ## Implemented Features
-- Daily log form (accidents, leaks, BM type, meds/protocol multi-select, water/fiber, activity, notes) with partial entry support
+- Daily log form (accidents, leaks, BM type, meds/protocol multi-select, hydration & diet, activity, notes) with partial entry support
 - History list with detailed cards and export/share CSV & PDF (meds displayed as comma-separated)
 - Progress tab with stacked bar chart for Leaks / Enema / SP / Activity over time plus meds impact view
 - Resources tab with placeholder external links

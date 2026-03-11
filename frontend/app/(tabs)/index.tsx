@@ -35,6 +35,15 @@ const medsOptions = [
   { label: "None/Not taken", value: "None/Not taken" },
 ];
 
+const motilityOptions = [
+  { label: "Kiwi", value: "Kiwi" },
+  { label: "Pears", value: "Pears" },
+  { label: "Pineapple", value: "Pineapple" },
+  { label: "Avocado", value: "Avocado" },
+  { label: "Olive oil/Butter/Ghee", value: "Olive oil/Butter/Ghee" },
+  { label: "Warm liquids", value: "Warm liquids" },
+];
+
 export default function LogScreen() {
   const [dateValue, setDateValue] = useState(
     new Date().toISOString().split("T")[0]
@@ -43,6 +52,7 @@ export default function LogScreen() {
   const [urineAccidents, setUrineAccidents] = useState("");
   const [leaks, setLeaks] = useState("no");
   const [medsProtocol, setMedsProtocol] = useState([]);
+  const [motilityFoods, setMotilityFoods] = useState([]);
   const [bmType, setBmType] = useState("none");
   const [bmNotes, setBmNotes] = useState("");
   const [waterIntake, setWaterIntake] = useState("");
@@ -70,6 +80,7 @@ export default function LogScreen() {
     setUrineAccidents("");
     setLeaks("no");
     setMedsProtocol([]);
+    setMotilityFoods([]);
     setBmType("none");
     setBmNotes("");
     setWaterIntake("");
@@ -97,6 +108,7 @@ export default function LogScreen() {
       if (fecal !== undefined) payload.fecal_accidents = fecal;
       if (urine !== undefined) payload.urine_accidents = urine;
       if (medsProtocol.length) payload.medication = medsProtocol;
+      if (motilityFoods.length) payload.motility_foods = motilityFoods;
       if (bmNotes.trim()) payload.bm_notes = bmNotes.trim();
       if (water !== undefined) {
         payload.water_intake = water;
@@ -224,7 +236,7 @@ export default function LogScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hydration</Text>
+            <Text style={styles.sectionTitle}>Hydration & diet</Text>
             <View style={styles.row}>
               <View style={styles.column}>
                 <Text style={styles.label}>Water ({settings.waterUnit})</Text>
@@ -245,6 +257,31 @@ export default function LogScreen() {
                   keyboardType="numeric"
                   style={styles.input}
                 />
+              </View>
+            </View>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Diet (optional)</Text>
+              <View style={styles.chipRow}>
+                {motilityOptions.map((option) => {
+                  const isActive = motilityFoods.includes(option.value);
+                  return (
+                    <TouchableOpacity
+                      key={option.value}
+                      onPress={() => {
+                        setMotilityFoods((prev) =>
+                          prev.includes(option.value)
+                            ? prev.filter((item) => item !== option.value)
+                            : [...prev, option.value]
+                        );
+                      }}
+                      style={[styles.chip, isActive && styles.chipActive]}
+                    >
+                      <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           </View>

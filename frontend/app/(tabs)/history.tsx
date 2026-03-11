@@ -101,6 +101,22 @@ export default function HistoryScreen() {
     return normalizeMedicationLabel(value);
   };
 
+  const formatMotilityFoods = (value) => {
+    if (value === null || value === undefined) return "Not logged";
+    if (Array.isArray(value)) {
+      return value.length ? value.join(", ") : "Not logged";
+    }
+    return value || "Not logged";
+  };
+
+  const formatMotilityFoodsExport = (value) => {
+    if (value === null || value === undefined) return "";
+    if (Array.isArray(value)) {
+      return value.join(" | ");
+    }
+    return value;
+  };
+
   const buildCsv = () => {
     const header = [
       "Date",
@@ -110,6 +126,7 @@ export default function HistoryScreen() {
       "BM type",
       "BM notes",
       "Meds/Protocol",
+      "Diet",
       "Water intake",
       "Water unit",
       "Fiber intake",
@@ -125,6 +142,7 @@ export default function HistoryScreen() {
       entry.bm_type ?? "",
       entry.bm_notes ?? "",
       formatMedicationExport(entry.medication),
+      formatMotilityFoodsExport(entry.motility_foods),
       entry.water_intake ?? "",
       entry.water_unit ?? "",
       entry.fiber_intake ?? "",
@@ -171,6 +189,7 @@ export default function HistoryScreen() {
           <td>${entry.bm_type ?? ""}</td>
           <td>${entry.bm_notes ?? ""}</td>
           <td>${formatMedicationExport(entry.medication)}</td>
+          <td>${formatMotilityFoodsExport(entry.motility_foods)}</td>
           <td>${entry.water_intake ?? ""} ${entry.water_unit ?? ""}</td>
           <td>${entry.fiber_intake ?? ""} ${entry.fiber_unit ?? ""}</td>
           <td>${entry.activity_30_min === undefined ? "" : entry.activity_30_min ? "Yes" : "No"}</td>
@@ -193,6 +212,7 @@ export default function HistoryScreen() {
                 <th style="border: 1px solid #ccc; padding: 6px;">BM type</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">BM notes</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Meds/Protocol</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Diet</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Water</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Fiber</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Activity 30 min</th>
@@ -279,6 +299,12 @@ export default function HistoryScreen() {
               <Text style={styles.detailLabel}>Meds/Protocol</Text>
               <Text style={styles.detailValue}>
                 {formatMedication(entry.medication)}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Diet</Text>
+              <Text style={styles.detailValue}>
+                {formatMotilityFoods(entry.motility_foods)}
               </Text>
             </View>
             <View style={styles.detailRow}>
