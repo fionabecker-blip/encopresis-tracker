@@ -52,7 +52,7 @@ export default function LogScreen() {
   const [urineAccidents, setUrineAccidents] = useState("");
   const [leaks, setLeaks] = useState("no");
   const [medsProtocol, setMedsProtocol] = useState([]);
-  const [motilityFoods, setMotilityFoods] = useState([]);
+  const [dietItems, setDietItems] = useState([]);
   const [bmType, setBmType] = useState("none");
   const [bmNotes, setBmNotes] = useState("");
   const [waterIntake, setWaterIntake] = useState("");
@@ -80,7 +80,7 @@ export default function LogScreen() {
     setUrineAccidents("");
     setLeaks("no");
     setMedsProtocol([]);
-    setMotilityFoods([]);
+    setDietItems([]);
     setBmType("none");
     setBmNotes("");
     setWaterIntake("");
@@ -108,7 +108,7 @@ export default function LogScreen() {
       if (fecal !== undefined) payload.fecal_accidents = fecal;
       if (urine !== undefined) payload.urine_accidents = urine;
       if (medsProtocol.length) payload.medication = medsProtocol;
-      if (motilityFoods.length) payload.motility_foods = motilityFoods;
+      if (dietItems.length) payload.motility_foods = dietItems;
       if (bmNotes.trim()) payload.bm_notes = bmNotes.trim();
       if (water !== undefined) {
         payload.water_intake = water;
@@ -236,7 +236,7 @@ export default function LogScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Hydration & diet</Text>
+            <Text style={styles.sectionTitle}>Hydration and diet</Text>
             <View style={styles.row}>
               <View style={styles.column}>
                 <Text style={styles.label}>Water ({settings.waterUnit})</Text>
@@ -263,12 +263,12 @@ export default function LogScreen() {
               <Text style={styles.label}>Diet (optional)</Text>
               <View style={styles.chipRow}>
                 {motilityOptions.map((option) => {
-                  const isActive = motilityFoods.includes(option.value);
+                  const isActive = dietItems.includes(option.value);
                   return (
                     <TouchableOpacity
                       key={option.value}
                       onPress={() => {
-                        setMotilityFoods((prev) =>
+                        setDietItems((prev) =>
                           prev.includes(option.value)
                             ? prev.filter((item) => item !== option.value)
                             : [...prev, option.value]
