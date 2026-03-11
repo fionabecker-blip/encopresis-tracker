@@ -6,7 +6,7 @@ import os
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Union
 import uuid
 from datetime import datetime, date
 
@@ -41,7 +41,7 @@ class EntryBase(BaseModel):
     fecal_accidents: Optional[int] = None
     urine_accidents: Optional[int] = None
     leaks: Optional[bool] = None
-    medication: Optional[str] = None
+    medication: Optional[Union[List[str], str]] = None
     bm_type: Optional[str] = None
     bm_notes: Optional[str] = None
     water_intake: Optional[float] = None
@@ -61,7 +61,7 @@ class EntryUpdate(BaseModel):
     fecal_accidents: Optional[int] = None
     urine_accidents: Optional[int] = None
     leaks: Optional[bool] = None
-    medication: Optional[str] = None
+    medication: Optional[Union[List[str], str]] = None
     bm_type: Optional[str] = None
     bm_notes: Optional[str] = None
     water_intake: Optional[float] = None

@@ -32,6 +32,7 @@ const medsOptions = [
   { label: "LGS", value: "LGS" },
   { label: "Multi-Mop", value: "Multi-Mop" },
   { label: "MOP x", value: "MOP x" },
+  { label: "None/Not taken", value: "None/Not taken" },
 ];
 
 export default function LogScreen() {
@@ -41,7 +42,7 @@ export default function LogScreen() {
   const [fecalAccidents, setFecalAccidents] = useState("");
   const [urineAccidents, setUrineAccidents] = useState("");
   const [leaks, setLeaks] = useState("no");
-  const [medsProtocol, setMedsProtocol] = useState("");
+  const [medsProtocol, setMedsProtocol] = useState([]);
   const [bmType, setBmType] = useState("none");
   const [bmNotes, setBmNotes] = useState("");
   const [waterIntake, setWaterIntake] = useState("");
@@ -68,7 +69,7 @@ export default function LogScreen() {
     setFecalAccidents("");
     setUrineAccidents("");
     setLeaks("no");
-    setMedsProtocol("");
+    setMedsProtocol([]);
     setBmType("none");
     setBmNotes("");
     setWaterIntake("");
@@ -95,7 +96,7 @@ export default function LogScreen() {
 
       if (fecal !== undefined) payload.fecal_accidents = fecal;
       if (urine !== undefined) payload.urine_accidents = urine;
-      if (medsProtocol) payload.medication = medsProtocol;
+      if (medsProtocol.length) payload.medication = medsProtocol;
       if (bmNotes.trim()) payload.bm_notes = bmNotes.trim();
       if (water !== undefined) {
         payload.water_intake = water;
@@ -187,14 +188,30 @@ export default function LogScreen() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Meds/Protocol</Text>
-            <Text style={styles.helperText}>Tap an option to select. Tap again to clear.</Text>
+            <Text style={styles.helperText}>
+              Tap to select multiple. “None/Not taken” clears other selections.
+            </Text>
             <View style={styles.chipRow}>
               {medsOptions.map((option) => {
-                const isActive = medsProtocol === option.value;
+                const isActive = medsProtocol.includes(option.value);
                 return (
                   <TouchableOpacity
                     key={option.value}
-                    onPress={() => setMedsProtocol(isActive ? "" : option.value)}
+                    onPress={() => {
+                      if (option.value === "None/Not taken") {
+                        setMedsProtocol(isActive ? [] : [option.value]);
+                        return;
+                      }
+                      setMedsProtocol((prev) => {
+                        const withoutNone = prev.filter(
+                          (item) => item !== "None/Not taken"
+                        );
+                        if (withoutNone.includes(option.value)) {
+                          return withoutNone.filter((item) => item !== option.value);
+                        }
+                        return [...withoutNone, option.value];
+                      });
+                    }}
                     style={[styles.chip, isActive && styles.chipActive]}
                   >
                     <Text style={[styles.chipText, isActive && styles.chipTextActive]}>

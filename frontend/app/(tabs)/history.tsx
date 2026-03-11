@@ -50,6 +50,22 @@ export default function HistoryScreen() {
     return value ? "Yes" : "No";
   };
 
+  const formatMedication = (value) => {
+    if (value === null || value === undefined) return "Not logged";
+    if (Array.isArray(value)) {
+      return value.length ? value.join(", ") : "Not logged";
+    }
+    return value || "Not logged";
+  };
+
+  const formatMedicationExport = (value) => {
+    if (value === null || value === undefined) return "";
+    if (Array.isArray(value)) {
+      return value.join(" | ");
+    }
+    return value;
+  };
+
   const buildCsv = () => {
     const header = [
       "Date",
@@ -73,7 +89,7 @@ export default function HistoryScreen() {
       entry.leaks === undefined ? "" : entry.leaks ? "Yes" : "No",
       entry.bm_type ?? "",
       entry.bm_notes ?? "",
-      entry.medication ?? "",
+      formatMedicationExport(entry.medication),
       entry.water_intake ?? "",
       entry.water_unit ?? "",
       entry.fiber_intake ?? "",
@@ -119,7 +135,7 @@ export default function HistoryScreen() {
           <td>${entry.leaks === undefined ? "" : entry.leaks ? "Yes" : "No"}</td>
           <td>${entry.bm_type ?? ""}</td>
           <td>${entry.bm_notes ?? ""}</td>
-          <td>${entry.medication ?? ""}</td>
+          <td>${formatMedicationExport(entry.medication)}</td>
           <td>${entry.water_intake ?? ""} ${entry.water_unit ?? ""}</td>
           <td>${entry.fiber_intake ?? ""} ${entry.fiber_unit ?? ""}</td>
           <td>${entry.activity_30_min === undefined ? "" : entry.activity_30_min ? "Yes" : "No"}</td>
@@ -226,7 +242,9 @@ export default function HistoryScreen() {
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Meds/Protocol</Text>
-              <Text style={styles.detailValue}>{formatText(entry.medication)}</Text>
+              <Text style={styles.detailValue}>
+                {formatMedication(entry.medication)}
+              </Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Water</Text>
