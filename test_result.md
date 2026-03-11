@@ -148,6 +148,12 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "✅ MEDS/PROTOCOL MULTI-SELECT TESTING COMPLETE: Mobile UI testing (390x844) confirms multi-select chip functionality working perfectly. ✅ Multi-select behavior: Successfully selected multiple medications (Miralax + Senna chips both active/blue). ✅ None/Not taken behavior: Correctly clears other selections when clicked. ✅ Clear None behavior: Selecting other meds after None correctly deselects None. ✅ Save functionality: Entry saved successfully with selected medications. ✅ Helper text present: 'Tap to select multiple. None/Not taken clears other selections.' All meds/protocol functionality working as expected." 
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Updated meds labels and added activity segment to progress; needs retest."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ COMPREHENSIVE MOBILE RETESTING COMPLETE: All requested features verified on mobile viewport (390x844). Daily Log: Updated meds chips working perfectly with correct labels (Miralax/Restorolax/PEG, Senna, LGS, Multi-Mop, MOP x, None/Not taken), multi-select behavior confirmed, None clearing functionality working. History: Normalized medication labels displaying correctly (verified 'Miralax/Restorolax/PEG, LGS' in entry), Export CSV/PDF buttons functional. Progress: Activity segment successfully added to legend with green color, updated subtitle mentions activity, Meds impact view shows all 5 updated medication labels, toggle between Daily and Meds impact working perfectly. All mobile UI features working as expected." 
 ##   - task: "History list with export CSV/PDF"
 ##     implemented: true
 ##     working: true
@@ -174,6 +180,12 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "✅ HISTORY MEDS/PROTOCOL DISPLAY TESTING COMPLETE: Mobile UI testing (390x844) confirms multi-select medication display working perfectly. ✅ Meds display: History entries show medications as comma-separated lists (verified 'Miralax/Restoralax/PEG, LGS' and 'LGS' displayed correctly). ✅ Export buttons: CSV and PDF export buttons visible and functional (both triggered successfully). ✅ Entry cards: All entry details properly displayed in organized card format with proper field labels. ✅ Mobile responsive: Layout works well on mobile viewport. All history functionality working as expected." 
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Normalized meds labels for history/export; needs retest."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ HISTORY NORMALIZED LABELS TESTING COMPLETE: Mobile UI testing (390x844) confirms normalized medication labels working perfectly. History entries display medications correctly with normalized labels (verified 'Miralax/Restorolax/PEG, LGS' format). Export CSV/PDF buttons functional and accessible. All history features working as expected with proper normalization." 
 ##   - task: "Settings for units and reminders"
 ##     implemented: true
 ##     working: true
@@ -214,6 +226,12 @@
 ##       - working: true
 ##         agent: "testing"
 ##         comment: "✅ PROGRESS TAB VIEW TOGGLE TESTING COMPLETE: Mobile UI testing (390x844) confirms toggle functionality working perfectly. ✅ Toggle options: Both 'Daily' and 'Meds impact' segmented controls visible and functional. ✅ Daily view: Shows stacked bars by date (01/0, 01/0, 01/1 format) with SP/Enema/Leaks data per day. ✅ Meds impact view: Shows stacked bars per medication protocol (Miralax/Restoralax, Senna/Exlax, LGS) with L/S/E count indicators below each bar. ✅ Chart legend: SP (blue), Enema (orange), Leaks (red) properly displayed. ✅ Mobile responsive: Both view modes work excellently on mobile. Toggle between views seamless and data displays correctly in each mode." 
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Added Activity segment and updated meds labels/normalization; needs retest."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ PROGRESS TAB COMPREHENSIVE TESTING COMPLETE: Mobile UI testing (390x844) confirms all Activity segment and meds features working perfectly. Activity segment successfully added to legend with green color indicator. Updated subtitle mentions 'compare meds/protocol impact with activity'. Meds impact view displays all 5 updated medication labels (Miralax/Restorolax/PEG, Senna, LGS, Multi-Mop, MOP x). Toggle between Daily and Meds impact views working seamlessly. Chart visualization includes Activity data in stacked bars. All Progress features fully functional." 
 ##   - task: "Resources tab (external links)"
 ##     implemented: true
 ##     working: true
@@ -234,10 +252,13 @@
 ##   test_sequence: 2
 ##   run_ui: false
 ## test_plan:
-##   current_focus: []
+##   current_focus:
+##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
+##     - "History list with export CSV/PDF"
+##     - "Progress chart for leaks/enema/SP"
 ##   stuck_tasks: []
-##   test_all: false
-##   test_priority: "completed"
+##   test_all: true
+##   test_priority: "high_first"
 ## agent_communication:
 ##   - agent: "main"
 ##     message: "Implemented backend CRUD and frontend tabs (log/history/settings), added exports and notifications. Screenshot captured before agent testing."
@@ -257,3 +278,5 @@
 ##     message: "Added Resources tab and meds/protocol multi-select; added meds impact view in Progress. Requesting UI retest."
 ##   - agent: "testing"
 ##     message: "🎉 COMPREHENSIVE MOBILE UI RETESTING COMPLETE ON ALL 4 FOCUS AREAS ✅ Testing completed on mobile viewport (390x844px) with full verification of updated features: ✅ Daily Log: Meds/protocol multi-select chips working perfectly - multi-select behavior confirmed, None/Not taken clearing works correctly, entry saving successful. ✅ History: Meds/protocol displayed as comma-separated lists, CSV/PDF export buttons functional. ✅ Progress: Toggle between Daily and Meds impact views working, stacked bars with L/S/E counts per protocol visible in meds view, chart legend present. ✅ Resources: All 4 placeholder resource links loaded and interactive, external browser instruction present. ALL UPDATED FUNCTIONALITY VERIFIED AND WORKING CORRECTLY." 
+##   - agent: "testing"
+##     message: "🎉 COMPREHENSIVE MOBILE RETESTING COMPLETE ✅ All requested features verified successfully on mobile viewport (390x844px): Daily Log meds chips show updated labels (Miralax/Restorolax/PEG, Senna, LGS, Multi-Mop, MOP x) with proper None/Not taken behavior and multi-select functionality. History displays normalized medication labels correctly and export CSV/PDF functions work. Progress tab includes Activity segment in legend with green color, updated subtitle mentions activity, Meds impact view shows all updated medication labels, toggle between views seamless. All mobile UI functionality working perfectly as requested." 

@@ -16,6 +16,7 @@ const colors = {
   sp: "#2563EB",
   enema: "#F59E0B",
   leaks: "#EF4444",
+  activity: "#10B981",
 };
 
 const viewOptions = [
@@ -24,8 +25,8 @@ const viewOptions = [
 ];
 
 const medsOptions = [
-  { label: "Miralax/Restoralax/PEG", value: "Miralax/Restoralax/PEG" },
-  { label: "Senna/Exlax", value: "Senna/Exlax" },
+  { label: "Miralax/Restorolax/PEG", value: "Miralax/Restorolax/PEG" },
+  { label: "Senna", value: "Senna" },
   { label: "LGS", value: "LGS" },
   { label: "Multi-Mop", value: "Multi-Mop" },
   { label: "MOP x", value: "MOP x" },
@@ -52,7 +53,31 @@ const getMedList = (value) => {
 
 const normalizeMed = (value) => {
   if (!value) return "";
-  return value.toLowerCase();
+  const normalized = value.toLowerCase();
+  if (
+    normalized.includes("miralax") ||
+    normalized.includes("restoralax") ||
+    normalized.includes("restorolax") ||
+    normalized.includes("peg")
+  ) {
+    return "miralax/restorolax/peg";
+  }
+  if (normalized.includes("senna") || normalized.includes("exlax")) {
+    return "senna";
+  }
+  if (normalized.includes("multi-mop") || normalized.includes("multi mop")) {
+    return "multi-mop";
+  }
+  if (normalized.includes("mop x") || normalized.includes("mopx")) {
+    return "mop x";
+  }
+  if (normalized.includes("lgs")) {
+    return "lgs";
+  }
+  if (normalized.includes("none")) {
+    return "none/not taken";
+  }
+  return normalized;
 };
 
 export default function ProgressScreen() {
@@ -86,12 +111,14 @@ export default function ProgressScreen() {
     const sp = bmType.includes("sp") ? 1 : 0;
     const enema = bmType.includes("enema") ? 1 : 0;
     const leaks = entry.leaks ? 1 : 0;
-    const total = sp + enema + leaks;
+    const activity = entry.activity_30_min ? 1 : 0;
+    const total = sp + enema + leaks + activity;
     return {
       date: entry.date,
       sp,
       enema,
       leaks,
+      activity,
       total,
     };
   });
@@ -108,12 +135,14 @@ export default function ProgressScreen() {
     const enema = related.filter((entry) =>
       normalizeBmType(entry.bm_type).includes("enema")
     ).length;
-    const total = leaks + sp + enema;
+    const activity = related.filter((entry) => entry.activity_30_min).length;
+    const total = leaks + sp + enema + activity;
     return {
       label: option.label,
       sp,
       enema,
       leaks,
+      activity,
       total,
     };
   });
@@ -128,7 +157,7 @@ export default function ProgressScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Progress overview</Text>
         <Text style={styles.subtitle}>
-          Track daily outcomes or compare meds/protocol impact over time.
+          Track daily outcomes or compare meds/protocol impact with activity.
         </Text>
 
         <SegmentedControl options={viewOptions} value={chartMode} onChange={setChartMode} />
@@ -157,6 +186,10 @@ export default function ProgressScreen() {
                 <View style={[styles.legendSwatch, { backgroundColor: colors.leaks }]} />
                 <Text style={styles.legendLabel}>Leaks</Text>
               </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendSwatch, { backgroundColor: colors.activity }]} />
+              <Text style={styles.legendLabel}>Activity</Text>
+            </View>
             </View>
 
             <View style={styles.chartWrapper}>
@@ -169,6 +202,7 @@ export default function ProgressScreen() {
                     const spHeight = (item.sp / maxTotal) * chartHeight;
                     const enemaHeight = (item.enema / maxTotal) * chartHeight;
                     const leaksHeight = (item.leaks / maxTotal) * chartHeight;
+                    const activityHeight = (item.activity / maxTotal) * chartHeight;
                     const showLabel = isMedsMode ? true : index % labelStep === 0;
                     return (
                       <View
@@ -200,6 +234,14 @@ export default function ProgressScreen() {
                               ]}
                             />
                           ) : null}
+                          {item.activity ? (
+                            <View
+                              style={[
+                                styles.barSegment,
+                                { height: activityHeight, backgroundColor: colors.activity },
+                              ]}
+                            />
+                          ) : null}
                         </View>
                         <Text style={styles.barLabel} numberOfLines={2}>
                           {showLabel
@@ -210,7 +252,7 @@ export default function ProgressScreen() {
                         </Text>
                         {isMedsMode ? (
                           <Text style={styles.countLabel}>
-                            L{item.leaks} | S{item.sp} | E{item.enema}
+                            L{item.leaks} | S{item.sp} | E{item.enema} | A{item.activity}
                           </Text>
                         ) : null}
                       </View>

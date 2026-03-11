@@ -50,20 +50,55 @@ export default function HistoryScreen() {
     return value ? "Yes" : "No";
   };
 
+  const normalizeMedicationLabel = (value) => {
+    if (!value) return "";
+    const normalized = value.toLowerCase();
+    if (
+      normalized.includes("miralax") ||
+      normalized.includes("restoralax") ||
+      normalized.includes("restorolax") ||
+      normalized.includes("peg")
+    ) {
+      return "Miralax/Restorolax/PEG";
+    }
+    if (normalized.includes("senna") || normalized.includes("exlax")) {
+      return "Senna";
+    }
+    if (normalized.includes("multi-mop") || normalized.includes("multi mop")) {
+      return "Multi-Mop";
+    }
+    if (normalized.includes("mop x") || normalized.includes("mopx")) {
+      return "MOP x";
+    }
+    if (normalized.includes("lgs")) {
+      return "LGS";
+    }
+    if (normalized.includes("none")) {
+      return "None/Not taken";
+    }
+    return value;
+  };
+
   const formatMedication = (value) => {
     if (value === null || value === undefined) return "Not logged";
     if (Array.isArray(value)) {
-      return value.length ? value.join(", ") : "Not logged";
+      const normalized = value
+        .map((item) => normalizeMedicationLabel(item))
+        .filter(Boolean);
+      return normalized.length ? Array.from(new Set(normalized)).join(", ") : "Not logged";
     }
-    return value || "Not logged";
+    return normalizeMedicationLabel(value) || "Not logged";
   };
 
   const formatMedicationExport = (value) => {
     if (value === null || value === undefined) return "";
     if (Array.isArray(value)) {
-      return value.join(" | ");
+      const normalized = value
+        .map((item) => normalizeMedicationLabel(item))
+        .filter(Boolean);
+      return Array.from(new Set(normalized)).join(" | ");
     }
-    return value;
+    return normalizeMedicationLabel(value);
   };
 
   const buildCsv = () => {

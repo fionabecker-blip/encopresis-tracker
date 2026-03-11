@@ -27,8 +27,8 @@ const yesNoOptions = [
 ];
 
 const medsOptions = [
-  { label: "Miralax/Restoralax/PEG", value: "Miralax/Restoralax/PEG" },
-  { label: "Senna/Exlax", value: "Senna/Exlax" },
+  { label: "Miralax/Restorolax/PEG", value: "Miralax/Restorolax/PEG" },
+  { label: "Senna", value: "Senna" },
   { label: "LGS", value: "LGS" },
   { label: "Multi-Mop", value: "Multi-Mop" },
   { label: "MOP x", value: "MOP x" },
