@@ -293,15 +293,10 @@
 ##   test_sequence: 2
 ##   run_ui: false
 ## test_plan:
-##   current_focus:
-##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
-##     - "History list with export CSV/PDF"
-##     - "Settings for units and reminders"
-##     - "Progress chart for leaks/enema/SP"
-##     - "Pediatrician report generator"
+##   current_focus: []
 ##   stuck_tasks: []
-##   test_all: true
-##   test_priority: "high_first"
+##   test_all: false
+##   test_priority: "completed"
 ##
 ## agent_communication:
 ##   - agent: "main"
