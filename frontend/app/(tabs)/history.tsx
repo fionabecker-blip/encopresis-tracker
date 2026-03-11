@@ -58,7 +58,7 @@ export default function HistoryScreen() {
       "Leaks",
       "BM type",
       "BM notes",
-      "Medication",
+      "Meds/Protocol",
       "Water intake",
       "Water unit",
       "Fiber intake",
@@ -141,7 +141,7 @@ export default function HistoryScreen() {
                 <th style="border: 1px solid #ccc; padding: 6px;">Leaks</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">BM type</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">BM notes</th>
-                <th style="border: 1px solid #ccc; padding: 6px;">Medication</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Meds/Protocol</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Water</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Fiber</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Activity 30 min</th>
@@ -225,7 +225,7 @@ export default function HistoryScreen() {
               <Text style={styles.detailValue}>{formatText(entry.bm_notes)}</Text>
             </View>
             <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Medication</Text>
+              <Text style={styles.detailLabel}>Meds/Protocol</Text>
               <Text style={styles.detailValue}>{formatText(entry.medication)}</Text>
             </View>
             <View style={styles.detailRow}>

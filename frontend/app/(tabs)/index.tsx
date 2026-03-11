@@ -26,6 +26,14 @@ const yesNoOptions = [
   { label: "No", value: "no" },
 ];
 
+const medsOptions = [
+  { label: "Miralax/Restoralax/PEG", value: "Miralax/Restoralax/PEG" },
+  { label: "SENNA/exlax", value: "SENNA/exlax" },
+  { label: "LGS", value: "LGS" },
+  { label: "Multi-Mop", value: "Multi-Mop" },
+  { label: "MOP x", value: "MOP x" },
+];
+
 export default function LogScreen() {
   const [dateValue, setDateValue] = useState(
     new Date().toISOString().split("T")[0]
@@ -33,7 +41,7 @@ export default function LogScreen() {
   const [fecalAccidents, setFecalAccidents] = useState("");
   const [urineAccidents, setUrineAccidents] = useState("");
   const [leaks, setLeaks] = useState("no");
-  const [medication, setMedication] = useState("");
+  const [medsProtocol, setMedsProtocol] = useState("");
   const [bmType, setBmType] = useState("none");
   const [bmNotes, setBmNotes] = useState("");
   const [waterIntake, setWaterIntake] = useState("");
@@ -60,7 +68,7 @@ export default function LogScreen() {
     setFecalAccidents("");
     setUrineAccidents("");
     setLeaks("no");
-    setMedication("");
+    setMedsProtocol("");
     setBmType("none");
     setBmNotes("");
     setWaterIntake("");
@@ -87,7 +95,7 @@ export default function LogScreen() {
 
       if (fecal !== undefined) payload.fecal_accidents = fecal;
       if (urine !== undefined) payload.urine_accidents = urine;
-      if (medication.trim()) payload.medication = medication.trim();
+      if (medsProtocol) payload.medication = medsProtocol;
       if (bmNotes.trim()) payload.bm_notes = bmNotes.trim();
       if (water !== undefined) {
         payload.water_intake = water;
@@ -178,13 +186,24 @@ export default function LogScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Medication</Text>
-            <TextInput
-              value={medication}
-              onChangeText={setMedication}
-              placeholder="Dose or medication notes"
-              style={styles.input}
-            />
+            <Text style={styles.sectionTitle}>Meds/Protocol</Text>
+            <Text style={styles.helperText}>Tap an option to select. Tap again to clear.</Text>
+            <View style={styles.chipRow}>
+              {medsOptions.map((option) => {
+                const isActive = medsProtocol === option.value;
+                return (
+                  <TouchableOpacity
+                    key={option.value}
+                    onPress={() => setMedsProtocol(isActive ? "" : option.value)}
+                    style={[styles.chip, isActive && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
 
           <View style={styles.section}>
@@ -278,6 +297,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#475569",
   },
+  helperText: {
+    color: "#94A3B8",
+    fontSize: 12,
+  },
   input: {
     borderWidth: 1,
     borderColor: "#CBD5F5",
@@ -295,6 +318,33 @@ const styles = StyleSheet.create({
   column: {
     flex: 1,
     gap: 8,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: "#CBD5F5",
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#F8FAFC",
+    minHeight: 36,
+    justifyContent: "center",
+  },
+  chipActive: {
+    backgroundColor: "#4C6FFF",
+    borderColor: "#4C6FFF",
+  },
+  chipText: {
+    color: "#1E293B",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  chipTextActive: {
+    color: "#FFFFFF",
   },
   stack: {
     gap: 8,
