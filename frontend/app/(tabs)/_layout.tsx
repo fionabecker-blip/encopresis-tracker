@@ -9,6 +9,7 @@ const logIcon = createIcon("create-outline");
 const historyIcon = createIcon("calendar-outline");
 const settingsIcon = createIcon("settings-outline");
 const progressIcon = createIcon("stats-chart-outline");
+const resourcesIcon = createIcon("book-outline");
 
 export default function TabsLayout() {
   return (
@@ -40,6 +41,13 @@ export default function TabsLayout() {
         options={{
           title: "Progress",
           tabBarIcon: progressIcon,
+        }}
+      />
+      <Tabs.Screen
+        name="resources"
+        options={{
+          title: "Resources",
+          tabBarIcon: resourcesIcon,
         }}
       />
       <Tabs.Screen
