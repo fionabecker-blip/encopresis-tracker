@@ -94,6 +94,7 @@ export default function SettingsScreen() {
       }
 
       const updated = await saveSettings({
+        childName: settings.childName,
         waterUnit: settings.waterUnit,
         fiberUnit: settings.fiberUnit,
         reminderEnabled,
@@ -116,6 +117,20 @@ export default function SettingsScreen() {
         behavior={Platform.select({ ios: "padding", android: undefined })}
       >
         <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Child profile</Text>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Child name</Text>
+              <TextInput
+                value={settings.childName}
+                onChangeText={(value) =>
+                  setSettings((prev) => ({ ...prev, childName: value }))
+                }
+                placeholder="Child name"
+                style={styles.input}
+              />
+            </View>
+          </View>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Units</Text>
             <View style={styles.stack}>

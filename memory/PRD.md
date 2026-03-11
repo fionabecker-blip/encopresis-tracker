@@ -14,6 +14,7 @@ Parents treating encopresis need an easy mobile app to log daily accidents, bowe
 - Daily log form (accidents, leaks, BM type, meds/protocol multi-select, hydration & diet, activity, notes) with partial entry support
 - History list with detailed cards and export/share CSV & PDF (meds displayed as comma-separated)
 - Progress tab with stacked bar chart for Leaks / Enema / SP / Activity over time plus meds impact view
+- Pediatrician report generator (last 30 days) with PDF export, summary metrics, charts, and detected patterns
 - Resources tab with placeholder external links
 - Settings for unit preferences and daily reminders
 - CRUD API for entries with date normalization

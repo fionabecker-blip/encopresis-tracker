@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const SETTINGS_KEY = "bm_settings";
 
 export const defaultSettings = {
+  childName: "",
   waterUnit: "oz",
   fiberUnit: "g",
   reminderEnabled: false,
