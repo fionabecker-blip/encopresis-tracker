@@ -401,6 +401,112 @@ export default function ProgressScreen() {
   const reportEnd = formatFullDate(today);
   const reportChildName = childName || "Child";
 
+  const supportMessages = {
+    improvement: [
+      "Fewer accidents this week. That’s a good sign the routine is helping.",
+      "Small improvements matter. This week shows progress—keep going.",
+      "Accidents are down. Gradual change is common in encopresis recovery.",
+    ],
+    noChange: [
+      "Progress can be slow. Consistency with sits and meds still matters.",
+      "No change yet is common. Staying steady often leads to improvement.",
+      "Recovery can take months. Your routine now supports future progress.",
+    ],
+    setback: [
+      "Setbacks happen. Keep the routine steady and give it time.",
+      "A tougher week can still be part of progress. Consistency helps.",
+      "Ups and downs are normal. Stay the course with the plan.",
+    ],
+    compliance: [
+      "Great consistency this week. Regular sits and meds support recovery.",
+      "Your routine is strong. That consistency often leads to progress.",
+      "Nice follow-through. Steady routines help the body adjust.",
+    ],
+    streak: [
+      "Several accident-free days is encouraging. Keep supporting the routine.",
+      "A streak like this is a positive sign. Nice progress.",
+      "Accident-free days are meaningful. Stay consistent.",
+    ],
+    logging: [
+      "Thanks for tracking—your logs help reveal progress and patterns.",
+      "Tracking consistently builds a clear picture over time.",
+      "Your daily entries make patterns easier to spot.",
+    ],
+    validation: [
+      "Encopresis can be hard on families. Staying engaged helps your child.",
+      "You’re doing something important by sticking with the routine.",
+      "This is challenging, and your steady support makes a difference.",
+    ],
+  };
+
+  const last7Dates = rangeDates.slice(-7);
+  const previous7Dates = rangeDates.slice(-14, -7);
+  const last7Entries = last7Dates
+    .map((date) => entryMap.get(date.toISOString().split("T")[0]))
+    .filter(Boolean);
+  const prev7Entries = previous7Dates
+    .map((date) => entryMap.get(date.toISOString().split("T")[0]))
+    .filter(Boolean);
+
+  const last7Accidents = last7Entries.reduce(
+    (sum, entry) => sum + getAccidents(entry),
+    0
+  );
+  const prev7Accidents = prev7Entries.reduce(
+    (sum, entry) => sum + getAccidents(entry),
+    0
+  );
+  const last7Leaks = last7Entries.filter((entry) => entry.leaks).length;
+  const prev7Leaks = prev7Entries.filter((entry) => entry.leaks).length;
+  const last7LoggedDays = last7Entries.length;
+
+  const medsLoggedDays = last7Entries.filter((entry) => {
+    const meds = getMedList(entry.medication);
+    if (!meds.length) return false;
+    return !meds.some((item) => normalizeMed(item).includes("none/not taken"));
+  }).length;
+
+  let streakCount = 0;
+  let bestStreak = 0;
+  last7Dates.forEach((date) => {
+    const entry = entryMap.get(date.toISOString().split("T")[0]);
+    if (entry && getAccidents(entry) === 0) {
+      streakCount += 1;
+      bestStreak = Math.max(bestStreak, streakCount);
+    } else {
+      streakCount = 0;
+    }
+  });
+
+  const accidentsChange = prev7Accidents ? (last7Accidents - prev7Accidents) / prev7Accidents : 0;
+  const improvementDetected = last7Accidents < prev7Accidents && last7Leaks < prev7Leaks;
+  const setbackDetected = last7Accidents > prev7Accidents && last7Leaks >= prev7Leaks;
+  const noChangeDetected = Math.abs(accidentsChange) <= 0.1;
+  const complianceDetected = last7LoggedDays >= 5 && medsLoggedDays >= 5;
+  const loggingDetected = last7LoggedDays >= 5;
+
+  const chooseMessage = (list, seed) => list[seed % list.length];
+  const messageSeed = totalAccidents + totalBowelMovements + last7Accidents;
+
+  let supportiveMessage = "";
+  if (last7LoggedDays >= 7) {
+    if (bestStreak >= 3) {
+      supportiveMessage = chooseMessage(supportMessages.streak, messageSeed);
+    } else if (improvementDetected) {
+      supportiveMessage = chooseMessage(supportMessages.improvement, messageSeed);
+    } else if (setbackDetected) {
+      supportiveMessage = chooseMessage(supportMessages.setback, messageSeed);
+    } else if (noChangeDetected) {
+      supportiveMessage = chooseMessage(supportMessages.noChange, messageSeed);
+    } else if (complianceDetected) {
+      supportiveMessage = chooseMessage(supportMessages.compliance, messageSeed);
+    } else if (loggingDetected) {
+      supportiveMessage = chooseMessage(supportMessages.logging, messageSeed);
+    } else {
+      supportiveMessage = chooseMessage(supportMessages.validation, messageSeed);
+    }
+  }
+
   const buildBarsHtml = (labels, values, color) => {
     const maxValue = Math.max(1, ...values);
     return `
@@ -624,6 +730,17 @@ export default function ProgressScreen() {
             </View>
           </View>
         ) : null}
+
+        <View style={styles.reportCard}>
+          <Text style={styles.sectionTitle}>Weekly support</Text>
+          {last7LoggedDays < 7 ? (
+            <Text style={styles.reportMeta}>
+              Log at least 7 days to unlock weekly support insights.
+            </Text>
+          ) : (
+            <Text style={styles.patternText}>{supportiveMessage}</Text>
+          )}
+        </View>
 
         <View style={styles.reportCard}>
           <View style={styles.reportHeaderRow}>
