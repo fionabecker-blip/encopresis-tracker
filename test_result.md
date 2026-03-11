@@ -125,7 +125,7 @@
 ##     file: "/app/frontend/app/(tabs)/index.tsx"
 ##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
@@ -139,7 +139,7 @@
 ##     file: "/app/frontend/app/(tabs)/history.tsx"
 ##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
@@ -153,7 +153,7 @@
 ##     file: "/app/frontend/app/(tabs)/settings.tsx"
 ##     stuck_count: 1
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
@@ -161,6 +161,17 @@
 ##       - working: false
 ##         agent: "testing"
 ##         comment: "BLOCKED: Cannot test UI due to infrastructure issue. Code review shows complete implementation: water/fiber unit toggles, reminder on/off toggle, time input field, expo-notifications integration with permission requests, settings persistence via AsyncStorage. Implementation appears comprehensive but needs tunnel/proxy fix to test functionality."
+##   - task: "Progress chart for leaks/enema/SP"
+##     implemented: true
+##     working: "NA"
+##     file: "/app/frontend/app/(tabs)/progress.tsx"
+##     stuck_count: 0
+##     priority: "high"
+##     needs_retesting: true
+##     status_history:
+##       - working: "NA"
+##         agent: "main"
+##         comment: "Added Progress tab with stacked bar chart for leaks, enema, and SP counts." 
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
@@ -171,6 +182,7 @@
 ##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
 ##     - "History list with export CSV/PDF"
 ##     - "Settings for units and reminders"
+##     - "Progress chart for leaks/enema/SP"
 ##   stuck_tasks:
 ##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
 ##     - "History list with export CSV/PDF"
@@ -184,3 +196,5 @@
 ##     message: "Backend CRUD testing complete - ALL TESTS PASSED ✅. Tested all daily entry operations: POST with minimal/full fields, GET list/individual, PUT updates, DELETE operations, and error handling. API fully functional at /api/entries endpoint. Ready for frontend testing or main agent can finish if no UI testing needed."
 ##   - agent: "testing"
 ##     message: "CRITICAL ISSUE: Frontend UI testing blocked by infrastructure issue. Preview URL https://fiber-track-3.preview.emergentagent.com shows placeholder 'Start building apps on emergent' screen instead of Expo app. Expo is running locally on port 3000 and serving content correctly, but tunnel/proxy routing is not working. All frontend tasks need routing fix before UI testing can proceed. Code review shows comprehensive implementation of Daily Log form, History with export buttons, and Settings with unit toggles and reminders."
+##   - agent: "main"
+##     message: "Added Progress tab with stacked bar chart (leaks/enema/SP) and updated tab navigation. Frontend tasks need retesting after infra fix." 
