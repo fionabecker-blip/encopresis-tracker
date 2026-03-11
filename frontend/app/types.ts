@@ -24,3 +24,7 @@ export const settingsDefaults = {
   reminderTime: "20:00",
   notificationId: null,
 };
+
+export default function TypesRoute() {
+  return null;
+}

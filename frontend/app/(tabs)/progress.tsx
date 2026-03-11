@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -7,7 +7,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import { apiGet } from "../utils/api";
 
 const chartHeight = 220;
@@ -51,11 +50,9 @@ export default function ProgressScreen() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchEntries();
-    }, [fetchEntries])
-  );
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
 
   const metrics = entries.map((entry) => {
     const bmType = normalizeBmType(entry.bm_type);

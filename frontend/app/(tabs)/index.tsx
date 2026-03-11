@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import SegmentedControl from "../components/SegmentedControl";
 import { apiSend } from "../utils/api";
 import { defaultSettings, loadSettings } from "../utils/storage";
@@ -49,11 +48,6 @@ export default function LogScreen() {
     loadSettings().then(setSettings);
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      loadSettings().then(setSettings);
-    }, [])
-  );
 
   const parseNumber = (value) => {
     const trimmed = value.trim();

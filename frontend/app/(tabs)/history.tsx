@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -8,7 +8,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useFocusEffect } from "@react-navigation/native";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
@@ -32,11 +31,9 @@ export default function HistoryScreen() {
     }
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchEntries();
-    }, [fetchEntries])
-  );
+  useEffect(() => {
+    fetchEntries();
+  }, [fetchEntries]);
 
   const formatNumber = (value) => {
     if (value === null || value === undefined) return "Not logged";

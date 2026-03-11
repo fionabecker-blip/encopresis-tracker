@@ -27,3 +27,7 @@ export async function saveSettings(update) {
   await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   return next;
 }
+
+export default function StorageRoute() {
+  return null;
+}

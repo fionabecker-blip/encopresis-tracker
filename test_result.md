@@ -133,6 +133,9 @@
 ##       - working: false
 ##         agent: "testing"
 ##         comment: "BLOCKED: Cannot test UI due to infrastructure issue. Preview URL shows placeholder instead of Expo app. Code review shows comprehensive implementation: form with accidents/leaks/BM type fields, segmented controls for yes/no selections, proper API integration to POST /entries, form reset after save, loading states. Implementation appears correct but needs tunnel/proxy fix to test functionality."
+##       - working: false
+##         agent: "user"
+##         comment: "User reported 'couldn't find a navigation object' error after Progress tab addition."
 ##   - task: "History list with export CSV/PDF"
 ##     implemented: true
 ##     working: false
@@ -147,6 +150,9 @@
 ##       - working: false
 ##         agent: "testing"
 ##         comment: "BLOCKED: Cannot test UI due to infrastructure issue. Code review shows complete implementation: fetches entries from GET /entries API, renders cards with all entry details, Export CSV/PDF buttons using expo-sharing, proper error handling. Implementation looks correct but needs tunnel/proxy fix to test functionality."
+##       - working: false
+##         agent: "main"
+##         comment: "Removed useFocusEffect to avoid navigation object error; will retest." 
 ##   - task: "Settings for units and reminders"
 ##     implemented: true
 ##     working: false
@@ -172,6 +178,9 @@
 ##       - working: "NA"
 ##         agent: "main"
 ##         comment: "Added Progress tab with stacked bar chart for leaks, enema, and SP counts." 
+##       - working: false
+##         agent: "main"
+##         comment: "Removed useFocusEffect to avoid navigation object error; will retest." 
 ## metadata:
 ##   created_by: "main_agent"
 ##   version: "1.0"
@@ -198,3 +207,5 @@
 ##     message: "CRITICAL ISSUE: Frontend UI testing blocked by infrastructure issue. Preview URL https://fiber-track-3.preview.emergentagent.com shows placeholder 'Start building apps on emergent' screen instead of Expo app. Expo is running locally on port 3000 and serving content correctly, but tunnel/proxy routing is not working. All frontend tasks need routing fix before UI testing can proceed. Code review shows comprehensive implementation of Daily Log form, History with export buttons, and Settings with unit toggles and reminders."
 ##   - agent: "main"
 ##     message: "Added Progress tab with stacked bar chart (leaks/enema/SP) and updated tab navigation. Frontend tasks need retesting after infra fix." 
+##   - agent: "main"
+##     message: "User reported navigation object error; removed useFocusEffect from screens to avoid navigation dependency. Needs UI retest once preview works." 

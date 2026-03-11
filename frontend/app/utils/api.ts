@@ -27,3 +27,7 @@ export async function apiSend(path, method, body) {
   }
   return response.json();
 }
+
+export default function ApiRoute() {
+  return null;
+}
