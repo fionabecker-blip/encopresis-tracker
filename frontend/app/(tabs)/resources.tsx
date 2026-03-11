@@ -4,9 +4,9 @@ import * as Linking from "expo-linking";
 
 const resources = [
   {
-    title: "Encopresis overview",
-    description: "Placeholder summary for parents and caregivers.",
-    url: "https://example.com/encopresis-overview",
+    title: "Encopresis overview (Cincinnati Children’s)",
+    description: "Trusted clinical overview from Cincinnati Children’s.",
+    url: "https://www.cincinnatichildrens.org/health/e/encopresis",
   },
   {
     title: "Bowel management routines",
