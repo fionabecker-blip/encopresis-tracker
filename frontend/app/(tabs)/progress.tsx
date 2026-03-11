@@ -30,10 +30,11 @@ const viewOptions = [
 
 const medsOptions = [
   { label: "Miralax/Restorolax/PEG", value: "Miralax/Restorolax/PEG" },
-  { label: "Senna", value: "Senna" },
+  { label: "Senna/Exlax", value: "Senna/Exlax" },
   { label: "LGS", value: "LGS" },
   { label: "Multi-Mop", value: "Multi-Mop" },
   { label: "MOP x", value: "MOP x" },
+  { label: "Mag citrate", value: "Mag citrate" },
   { label: "None/Not taken", value: "None/Not taken" },
 ];
 
@@ -67,13 +68,16 @@ const normalizeMed = (value) => {
     return "miralax/restorolax/peg";
   }
   if (normalized.includes("senna") || normalized.includes("exlax")) {
-    return "senna";
+    return "senna/exlax";
   }
   if (normalized.includes("multi-mop") || normalized.includes("multi mop")) {
     return "multi-mop";
   }
   if (normalized.includes("mop x") || normalized.includes("mopx")) {
     return "mop x";
+  }
+  if (normalized.includes("mag citrate")) {
+    return "mag citrate";
   }
   if (normalized.includes("lgs")) {
     return "lgs";
@@ -338,6 +342,10 @@ export default function ProgressScreen() {
     ? Math.round((completedDays / expectedDays) * 100)
     : null;
 
+  const timedSitsDays = entriesInRange.filter(
+    (entry) => entry.timed_sits_completed
+  ).length;
+
   const weeksCount = Math.ceil(rangeDates.length / 7);
   const accidentsPerWeek = new Array(weeksCount).fill(0);
   const bmsPerWeek = new Array(weeksCount).fill(0);
@@ -585,6 +593,10 @@ export default function ProgressScreen() {
               <td style="border:1px solid #E2E8F0; padding:8px;">Avg days between stools</td>
               <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;" colspan="3">${averageInterval === null ? "N/A" : averageInterval.toFixed(1)}</td>
             </tr>
+            <tr>
+              <td style="border:1px solid #E2E8F0; padding:8px;">Timed sits completed (days)</td>
+              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;" colspan="3">${timedSitsDays}</td>
+            </tr>
           </table>
 
           <h3>Accidents per week</h3>
@@ -773,6 +785,10 @@ export default function ProgressScreen() {
               <Text style={styles.summaryValue}>
                 {adherencePercent === null ? "N/A" : `${adherencePercent}%`}
               </Text>
+            </View>
+            <View style={styles.summaryCard}>
+              <Text style={styles.summaryLabel}>Timed sits completed</Text>
+              <Text style={styles.summaryValue}>{timedSitsDays}</Text>
             </View>
             <View style={styles.summaryCardFull}>
               <Text style={styles.summaryLabel}>Average days between stools</Text>

@@ -53,6 +53,14 @@ export default function SettingsScreen() {
     });
   }, []);
 
+  const formatList = (list) => (Array.isArray(list) ? list.join(", ") : "");
+
+  const parseList = (value) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
   const scheduleReminder = async (time) => {
     const [hourValue, minuteValue] = time.split(":");
     const hour = Number(hourValue);
@@ -97,6 +105,7 @@ export default function SettingsScreen() {
         childName: settings.childName,
         waterUnit: settings.waterUnit,
         fiberUnit: settings.fiberUnit,
+        medAmountOptions: settings.medAmountOptions,
         reminderEnabled,
         reminderTime,
         notificationId,
@@ -154,6 +163,64 @@ export default function SettingsScreen() {
                     fiberUnit: value,
                   }))
                 }
+              />
+            </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Medication amounts</Text>
+            <Text style={styles.helperText}>
+              Enter comma-separated options.
+            </Text>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Miralax/Restorolax/PEG (caps)</Text>
+              <TextInput
+                value={formatList(settings.medAmountOptions?.miralaxCaps)}
+                onChangeText={(value) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    medAmountOptions: {
+                      ...prev.medAmountOptions,
+                      miralaxCaps: parseList(value),
+                    },
+                  }))
+                }
+                placeholder="1/2 cap, 1 cap, 2 caps"
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Senna/Exlax (squares)</Text>
+              <TextInput
+                value={formatList(settings.medAmountOptions?.sennaSquares)}
+                onChangeText={(value) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    medAmountOptions: {
+                      ...prev.medAmountOptions,
+                      sennaSquares: parseList(value),
+                    },
+                  }))
+                }
+                placeholder="1 square, 2 squares, 3 squares"
+                style={styles.input}
+              />
+            </View>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Mag citrate (mg)</Text>
+              <TextInput
+                value={formatList(settings.medAmountOptions?.magCitrateMg)}
+                onChangeText={(value) =>
+                  setSettings((prev) => ({
+                    ...prev,
+                    medAmountOptions: {
+                      ...prev.medAmountOptions,
+                      magCitrateMg: parseList(value),
+                    },
+                  }))
+                }
+                placeholder="100 mg, 200 mg, 400 mg"
+                style={styles.input}
               />
             </View>
           </View>
@@ -223,6 +290,10 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     color: "#475569",
+  },
+  helperText: {
+    color: "#94A3B8",
+    fontSize: 12,
   },
   stack: {
     gap: 8,

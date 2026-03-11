@@ -62,7 +62,10 @@ export default function HistoryScreen() {
       return "Miralax/Restorolax/PEG";
     }
     if (normalized.includes("senna") || normalized.includes("exlax")) {
-      return "Senna";
+      return "Senna/Exlax";
+    }
+    if (normalized.includes("mag citrate")) {
+      return "Mag citrate";
     }
     if (normalized.includes("multi-mop") || normalized.includes("multi mop")) {
       return "Multi-Mop";
@@ -101,6 +104,30 @@ export default function HistoryScreen() {
     return normalizeMedicationLabel(value);
   };
 
+  const formatMedicationDoses = (value) => {
+    if (!value || typeof value !== "object") return "Not logged";
+    const entries = Object.entries(value)
+      .filter(([, dose]) => dose)
+      .map(([med, dose]) => `${normalizeMedicationLabel(med)}: ${dose}`);
+    return entries.length ? entries.join(", ") : "Not logged";
+  };
+
+  const formatMedicationDosesExport = (value) => {
+    if (!value || typeof value !== "object") return "";
+    const entries = Object.entries(value)
+      .filter(([, dose]) => dose)
+      .map(([med, dose]) => `${normalizeMedicationLabel(med)}: ${dose}`);
+    return entries.join(" | ");
+  };
+
+  const formatPoopConsistency = (value) => {
+    if (!value) return "Not logged";
+    if (value === "soft_normal") return "Soft / normal";
+    if (value === "hard_constipated") return "Hard / constipated";
+    if (value === "very_loose") return "Very loose";
+    return value;
+  };
+
   const formatMotilityFoods = (value) => {
     if (value === null || value === undefined) return "Not logged";
     if (Array.isArray(value)) {
@@ -125,12 +152,17 @@ export default function HistoryScreen() {
       "Leaks",
       "BM type",
       "BM notes",
+      "Poop consistency",
       "Meds/Protocol",
+      "Medication amounts",
       "Hydration/Diet",
       "Water intake",
       "Water unit",
       "Fiber intake",
       "Fiber unit",
+      "Clean out",
+      "Clean out notes",
+      "Timed sits completed",
       "Activity 30 min",
       "Notes",
     ];
@@ -141,12 +173,17 @@ export default function HistoryScreen() {
       entry.leaks === undefined ? "" : entry.leaks ? "Yes" : "No",
       entry.bm_type ?? "",
       entry.bm_notes ?? "",
+      formatPoopConsistency(entry.poop_consistency),
       formatMedicationExport(entry.medication),
+      formatMedicationDosesExport(entry.medication_doses),
       formatMotilityFoodsExport(entry.motility_foods),
       entry.water_intake ?? "",
       entry.water_unit ?? "",
       entry.fiber_intake ?? "",
       entry.fiber_unit ?? "",
+      entry.clean_out === undefined ? "" : entry.clean_out ? "Yes" : "No",
+      entry.clean_out_notes ?? "",
+      entry.timed_sits_completed === undefined ? "" : entry.timed_sits_completed ? "Yes" : "No",
       entry.activity_30_min === undefined ? "" : entry.activity_30_min ? "Yes" : "No",
       entry.notes ?? "",
     ]);
@@ -188,10 +225,15 @@ export default function HistoryScreen() {
           <td>${entry.leaks === undefined ? "" : entry.leaks ? "Yes" : "No"}</td>
           <td>${entry.bm_type ?? ""}</td>
           <td>${entry.bm_notes ?? ""}</td>
+          <td>${formatPoopConsistency(entry.poop_consistency)}</td>
           <td>${formatMedicationExport(entry.medication)}</td>
+          <td>${formatMedicationDosesExport(entry.medication_doses)}</td>
           <td>${formatMotilityFoodsExport(entry.motility_foods)}</td>
           <td>${entry.water_intake ?? ""} ${entry.water_unit ?? ""}</td>
           <td>${entry.fiber_intake ?? ""} ${entry.fiber_unit ?? ""}</td>
+          <td>${entry.clean_out === undefined ? "" : entry.clean_out ? "Yes" : "No"}</td>
+          <td>${entry.clean_out_notes ?? ""}</td>
+          <td>${entry.timed_sits_completed === undefined ? "" : entry.timed_sits_completed ? "Yes" : "No"}</td>
           <td>${entry.activity_30_min === undefined ? "" : entry.activity_30_min ? "Yes" : "No"}</td>
           <td>${entry.notes ?? ""}</td>
         </tr>`
@@ -211,10 +253,15 @@ export default function HistoryScreen() {
                 <th style="border: 1px solid #ccc; padding: 6px;">Leaks</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">BM type</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">BM notes</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Poop consistency</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Meds/Protocol</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Medication amounts</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Hydration/Diet</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Water</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Fiber</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Clean out</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Clean out notes</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Timed sits</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Activity 30 min</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Notes</th>
               </tr>
@@ -296,9 +343,21 @@ export default function HistoryScreen() {
               <Text style={styles.detailValue}>{formatText(entry.bm_notes)}</Text>
             </View>
             <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Poop consistency</Text>
+              <Text style={styles.detailValue}>
+                {formatPoopConsistency(entry.poop_consistency)}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Meds/Protocol</Text>
               <Text style={styles.detailValue}>
                 {formatMedication(entry.medication)}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Medication amounts</Text>
+              <Text style={styles.detailValue}>
+                {formatMedicationDoses(entry.medication_doses)}
               </Text>
             </View>
             <View style={styles.detailRow}>
@@ -321,6 +380,20 @@ export default function HistoryScreen() {
                 {entry.fiber_intake === null || entry.fiber_intake === undefined
                   ? "Not logged"
                   : `${entry.fiber_intake} ${entry.fiber_unit ?? ""}`}
+              </Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Clean out</Text>
+              <Text style={styles.detailValue}>{formatBoolean(entry.clean_out)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Clean out notes</Text>
+              <Text style={styles.detailValue}>{formatText(entry.clean_out_notes)}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Timed sits completed</Text>
+              <Text style={styles.detailValue}>
+                {formatBoolean(entry.timed_sits_completed)}
               </Text>
             </View>
             <View style={styles.detailRow}>

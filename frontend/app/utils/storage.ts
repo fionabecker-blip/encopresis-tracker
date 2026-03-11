@@ -5,6 +5,11 @@ export const defaultSettings = {
   childName: "",
   waterUnit: "oz",
   fiberUnit: "g",
+  medAmountOptions: {
+    miralaxCaps: ["1/2 cap", "1 cap", "2 caps"],
+    sennaSquares: ["1 square", "2 squares", "3 squares", "4 squares"],
+    magCitrateMg: ["100 mg", "200 mg", "400 mg"],
+  },
   reminderEnabled: false,
   reminderTime: "20:00",
   notificationId: null,

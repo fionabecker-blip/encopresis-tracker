@@ -28,11 +28,18 @@ const yesNoOptions = [
 
 const medsOptions = [
   { label: "Miralax/Restorolax/PEG", value: "Miralax/Restorolax/PEG" },
-  { label: "Senna", value: "Senna" },
+  { label: "Senna/Exlax", value: "Senna/Exlax" },
   { label: "LGS", value: "LGS" },
   { label: "Multi-Mop", value: "Multi-Mop" },
   { label: "MOP x", value: "MOP x" },
+  { label: "Mag citrate", value: "Mag citrate" },
   { label: "None/Not taken", value: "None/Not taken" },
+];
+
+const poopOptions = [
+  { label: "Soft / normal", value: "soft_normal" },
+  { label: "Hard / constipated", value: "hard_constipated" },
+  { label: "Very loose", value: "very_loose" },
 ];
 
 const motilityOptions = [
@@ -52,11 +59,16 @@ export default function LogScreen() {
   const [urineAccidents, setUrineAccidents] = useState("");
   const [leaks, setLeaks] = useState("no");
   const [medsProtocol, setMedsProtocol] = useState([]);
+  const [medicationDoses, setMedicationDoses] = useState({});
   const [dietItems, setDietItems] = useState([]);
   const [bmType, setBmType] = useState("none");
   const [bmNotes, setBmNotes] = useState("");
+  const [poopConsistency, setPoopConsistency] = useState("");
   const [waterIntake, setWaterIntake] = useState("");
   const [fiberIntake, setFiberIntake] = useState("");
+  const [cleanOut, setCleanOut] = useState("no");
+  const [cleanOutNotes, setCleanOutNotes] = useState("");
+  const [timedSits, setTimedSits] = useState("no");
   const [activity30Min, setActivity30Min] = useState("no");
   const [notes, setNotes] = useState("");
   const [settings, setSettings] = useState(defaultSettings);
@@ -80,13 +92,37 @@ export default function LogScreen() {
     setUrineAccidents("");
     setLeaks("no");
     setMedsProtocol([]);
+    setMedicationDoses({});
     setDietItems([]);
     setBmType("none");
     setBmNotes("");
+    setPoopConsistency("");
     setWaterIntake("");
     setFiberIntake("");
+    setCleanOut("no");
+    setCleanOutNotes("");
+    setTimedSits("no");
     setActivity30Min("no");
     setNotes("");
+  };
+
+  const medAmountOptions = {
+    "Miralax/Restorolax/PEG": settings.medAmountOptions?.miralaxCaps || [
+      "1/2 cap",
+      "1 cap",
+      "2 caps",
+    ],
+    "Senna/Exlax": settings.medAmountOptions?.sennaSquares || [
+      "1 square",
+      "2 squares",
+      "3 squares",
+      "4 squares",
+    ],
+    "Mag citrate": settings.medAmountOptions?.magCitrateMg || [
+      "100 mg",
+      "200 mg",
+      "400 mg",
+    ],
   };
 
   const handleSubmit = async () => {
@@ -108,8 +144,12 @@ export default function LogScreen() {
       if (fecal !== undefined) payload.fecal_accidents = fecal;
       if (urine !== undefined) payload.urine_accidents = urine;
       if (medsProtocol.length) payload.medication = medsProtocol;
+      if (Object.keys(medicationDoses).length) {
+        payload.medication_doses = medicationDoses;
+      }
       if (dietItems.length) payload.motility_foods = dietItems;
       if (bmNotes.trim()) payload.bm_notes = bmNotes.trim();
+      if (poopConsistency) payload.poop_consistency = poopConsistency;
       if (water !== undefined) {
         payload.water_intake = water;
         payload.water_unit = settings.waterUnit;
@@ -118,6 +158,9 @@ export default function LogScreen() {
         payload.fiber_intake = fiber;
         payload.fiber_unit = settings.fiberUnit;
       }
+      payload.clean_out = cleanOut === "yes";
+      if (cleanOutNotes.trim()) payload.clean_out_notes = cleanOutNotes.trim();
+      payload.timed_sits_completed = timedSits === "yes";
       if (notes.trim()) payload.notes = notes.trim();
 
       await apiSend("/entries", "POST", payload);
@@ -194,6 +237,12 @@ export default function LogScreen() {
                   placeholder="Any details about SP/enema"
                   style={styles.input}
                 />
+                <Text style={styles.label}>How was the poop?</Text>
+                <SegmentedControl
+                  options={poopOptions}
+                  value={poopConsistency}
+                  onChange={setPoopConsistency}
+                />
               </View>
             ) : null}
           </View>
@@ -212,16 +261,29 @@ export default function LogScreen() {
                     onPress={() => {
                       if (option.value === "None/Not taken") {
                         setMedsProtocol(isActive ? [] : [option.value]);
+                        setMedicationDoses({});
                         return;
                       }
                       setMedsProtocol((prev) => {
                         const withoutNone = prev.filter(
                           (item) => item !== "None/Not taken"
                         );
+                        let next;
                         if (withoutNone.includes(option.value)) {
-                          return withoutNone.filter((item) => item !== option.value);
+                          next = withoutNone.filter((item) => item !== option.value);
+                        } else {
+                          next = [...withoutNone, option.value];
                         }
-                        return [...withoutNone, option.value];
+                        setMedicationDoses((prevDoses) => {
+                          const updated = { ...prevDoses };
+                          Object.keys(updated).forEach((key) => {
+                            if (!next.includes(key)) {
+                              delete updated[key];
+                            }
+                          });
+                          return updated;
+                        });
+                        return next;
                       });
                     }}
                     style={[styles.chip, isActive && styles.chipActive]}
@@ -233,6 +295,43 @@ export default function LogScreen() {
                 );
               })}
             </View>
+            {medsProtocol.filter((item) => item !== "None/Not taken").length > 0 ? (
+              <View style={styles.stack}>
+                <Text style={styles.label}>Medication amounts</Text>
+                {medsProtocol
+                  .filter((item) => item !== "None/Not taken")
+                  .map((med) => {
+                    const options = medAmountOptions[med] || [];
+                    if (!options.length) return null;
+                    return (
+                      <View key={med} style={styles.stack}>
+                        <Text style={styles.subLabel}>{med}</Text>
+                        <View style={styles.chipRow}>
+                          {options.map((option) => {
+                            const isSelected = medicationDoses[med] === option;
+                            return (
+                              <TouchableOpacity
+                                key={`${med}-${option}`}
+                                onPress={() =>
+                                  setMedicationDoses((prev) => ({
+                                    ...prev,
+                                    [med]: isSelected ? "" : option,
+                                  }))
+                                }
+                                style={[styles.chip, isSelected && styles.chipActive]}
+                              >
+                                <Text style={[styles.chipText, isSelected && styles.chipTextActive]}>
+                                  {option}
+                                </Text>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </View>
+                      </View>
+                    );
+                  })}
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.section}>
@@ -284,6 +383,31 @@ export default function LogScreen() {
                 })}
               </View>
             </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Clean out</Text>
+            <SegmentedControl options={yesNoOptions} value={cleanOut} onChange={setCleanOut} />
+            {cleanOut === "yes" ? (
+              <View style={styles.stack}>
+                <Text style={styles.label}>Clean out notes (optional)</Text>
+                <TextInput
+                  value={cleanOutNotes}
+                  onChangeText={setCleanOutNotes}
+                  placeholder="Optional notes"
+                  style={styles.input}
+                />
+              </View>
+            ) : null}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Timed sits completed</Text>
+            <SegmentedControl
+              options={yesNoOptions}
+              value={timedSits}
+              onChange={setTimedSits}
+            />
           </View>
 
           <View style={styles.section}>
@@ -353,6 +477,10 @@ const styles = StyleSheet.create({
   },
   helperText: {
     color: "#94A3B8",
+    fontSize: 12,
+  },
+  subLabel: {
+    color: "#64748B",
     fontSize: 12,
   },
   input: {

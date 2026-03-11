@@ -42,13 +42,18 @@ class EntryBase(BaseModel):
     urine_accidents: Optional[int] = None
     leaks: Optional[bool] = None
     medication: Optional[Union[List[str], str]] = None
+    medication_doses: Optional[dict] = None
     bm_type: Optional[str] = None
     bm_notes: Optional[str] = None
+    poop_consistency: Optional[str] = None
     water_intake: Optional[float] = None
     fiber_intake: Optional[float] = None
     water_unit: Optional[str] = None
     fiber_unit: Optional[str] = None
     motility_foods: Optional[List[str]] = None
+    clean_out: Optional[bool] = None
+    clean_out_notes: Optional[str] = None
+    timed_sits_completed: Optional[bool] = None
     activity_30_min: Optional[bool] = None
     notes: Optional[str] = None
 
@@ -63,13 +68,18 @@ class EntryUpdate(BaseModel):
     urine_accidents: Optional[int] = None
     leaks: Optional[bool] = None
     medication: Optional[Union[List[str], str]] = None
+    medication_doses: Optional[dict] = None
     bm_type: Optional[str] = None
     bm_notes: Optional[str] = None
+    poop_consistency: Optional[str] = None
     water_intake: Optional[float] = None
     fiber_intake: Optional[float] = None
     water_unit: Optional[str] = None
     fiber_unit: Optional[str] = None
     motility_foods: Optional[List[str]] = None
+    clean_out: Optional[bool] = None
+    clean_out_notes: Optional[str] = None
+    timed_sits_completed: Optional[bool] = None
     activity_30_min: Optional[bool] = None
     notes: Optional[str] = None
 

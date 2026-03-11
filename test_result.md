@@ -153,7 +153,10 @@
 ##         comment: "Updated meds labels and added activity segment to progress; needs retest."
 ##       - working: true
 ##         agent: "testing"
-##         comment: "✅ COMPREHENSIVE MOBILE RETESTING COMPLETE: All requested features verified on mobile viewport (390x844). Daily Log: Updated meds chips working perfectly with correct labels (Miralax/Restorolax/PEG, Senna, LGS, Multi-Mop, MOP x, None/Not taken), multi-select behavior confirmed, None clearing functionality working. History: Normalized medication labels displaying correctly (verified 'Miralax/Restorolax/PEG, LGS' in entry), Export CSV/PDF buttons functional. Progress: Activity segment successfully added to legend with green color, updated subtitle mentions activity, Meds impact view shows all 5 updated medication labels, toggle between Daily and Meds impact working perfectly. All mobile UI features working as expected." 
+##         comment: "✅ COMPREHENSIVE MOBILE RETESTING COMPLETE: All requested features verified on mobile viewport (390x844). Daily Log: Updated meds chips working perfectly with correct labels (Miralax/Restorolax/PEG, Senna, LGS, Multi-Mop, MOP x, None/Not taken), multi-select behavior confirmed, None clearing functionality working. History: Normalized medication labels displaying correctly (verified 'Miralax/Restorolax/PEG, LGS' in entry), Export CSV/PDF buttons functional. Progress: Activity segment successfully added to legend with green color, updated subtitle mentions activity, Meds impact view shows all 5 updated medication labels, toggle between Daily and Meds impact working perfectly. All mobile UI features working as expected."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ UPDATED DAILY LOG FIELDS COMPREHENSIVE TESTING COMPLETE: Mobile UI testing (390x844px) confirms all requested new features working perfectly. ✅ BM section 'How was the poop?' correctly hidden when BM type is None, appears when SP/Enema selected with poop consistency options (Soft/normal, Hard/constipated, Very loose). ✅ Meds/Protocol includes Mag citrate with working dose chips for all three medications: Miralax/Restorolax/PEG (1 cap, 2 caps), Senna/Exlax (1 square, 2 squares), Mag citrate (100 mg, 200 mg) - dose selection functionality verified. ✅ Clean out toggle with optional notes section appears and functions. ✅ Timed sits completed toggle appears and works. ✅ All new fields integrate seamlessly with existing Daily Log functionality. All updated features fully functional in mobile viewport." 
 ##   - task: "History list with export CSV/PDF"
 ##     implemented: true
 ##     working: true
@@ -185,7 +188,10 @@
 ##         comment: "Normalized meds labels for history/export; needs retest."
 ##       - working: true
 ##         agent: "testing"
-##         comment: "✅ HISTORY NORMALIZED LABELS TESTING COMPLETE: Mobile UI testing (390x844) confirms normalized medication labels working perfectly. History entries display medications correctly with normalized labels (verified 'Miralax/Restorolax/PEG, LGS' format). Export CSV/PDF buttons functional and accessible. All history features working as expected with proper normalization." 
+##         comment: "✅ HISTORY NORMALIZED LABELS TESTING COMPLETE: Mobile UI testing (390x844) confirms normalized medication labels working perfectly. History entries display medications correctly with normalized labels (verified 'Miralax/Restorolax/PEG, LGS' format). Export CSV/PDF buttons functional and accessible. All history features working as expected with proper normalization."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ HISTORY NEW FIELDS COMPREHENSIVE TESTING COMPLETE: Mobile UI testing (390x844px) confirms History displays all new fields properly. ✅ History structure includes all new field labels: Poop consistency, Medication amounts, Clean out, Clean out notes, Timed sits completed. ✅ Field formatting works correctly with proper display values (e.g., 'Hard / constipated' for poop consistency, 'Yes/No' for boolean fields). ✅ Export CSV/PDF functionality still works perfectly - buttons are functional and accessible. ✅ All new fields integrate seamlessly into the history card layout without affecting existing functionality. History feature fully supports all updated Daily Log fields." 
 ##   - task: "Settings for units and reminders"
 ##     implemented: true
 ##     working: true
@@ -208,7 +214,10 @@
 ##         comment: "Added child name field for report generation; needs retest." 
 ##       - working: true
 ##         agent: "testing"
-##         comment: "✅ CHILD NAME FIELD TESTING COMPLETE: Mobile UI testing (390x844) confirms child name functionality working perfectly. ✅ Child profile section: 'Child profile' section clearly visible with proper styling. ✅ Child name input: Input field with placeholder 'Child name' visible and functional - successfully entered 'Alex Johnson', input value confirmed. ✅ Save functionality: 'Save settings' button clicked, 'Settings saved.' confirmation message appeared. ✅ All existing settings preserved: Units (water/fiber toggles) and Daily reminder sections still working perfectly. Child name field integration successful with no impact on existing functionality." 
+##         comment: "✅ CHILD NAME FIELD TESTING COMPLETE: Mobile UI testing (390x844) confirms child name functionality working perfectly. ✅ Child profile section: 'Child profile' section clearly visible with proper styling. ✅ Child name input: Input field with placeholder 'Child name' visible and functional - successfully entered 'Alex Johnson', input value confirmed. ✅ Save functionality: 'Save settings' button clicked, 'Settings saved.' confirmation message appeared. ✅ All existing settings preserved: Units (water/fiber toggles) and Daily reminder sections still working perfectly. Child name field integration successful with no impact on existing functionality."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ MEDICATION AMOUNTS SETTINGS COMPREHENSIVE TESTING COMPLETE: Mobile UI testing (390x844px) confirms all medication amounts functionality working perfectly. ✅ Medication amounts section visible in Settings with proper styling and instructions. ✅ All three medication input fields functional: Miralax/Restorolax/PEG (caps) with placeholder '1/2 cap, 1 cap, 2 caps', Senna/Exlax (squares) with placeholder '1 square, 2 squares, 3 squares, 4 squares', Mag citrate (mg) with placeholder '100 mg, 200 mg, 400 mg'. ✅ Input fields accept comma-separated values as designed. ✅ Settings save functionality confirmed working. ✅ These medication amounts directly affect the dose options available in Daily Log as intended. All Settings functionality fully operational." 
 ##   - task: "Progress chart for leaks/enema/SP"
 ##     implemented: true
 ##     working: true
@@ -243,14 +252,17 @@
 ##         comment: "Added pediatrician report generator with summary metrics and charts; needs retest." 
 ##       - working: true
 ##         agent: "testing"
-##         comment: "✅ WEEKLY SUPPORT MESSAGES FEATURE CODE REVIEW COMPLETE: Comprehensive analysis of Progress tab implementation confirms weekly support messages feature fully implemented and correct. ✅ 7-day requirement: Code correctly checks 'last7LoggedDays >= 7' before showing support messages. ✅ Prompt message: When <7 days, shows 'Log at least 7 days to unlock weekly support insights.' ✅ Message quality: All supportive messages are under 25 words, non-judgmental, and encouraging (examples: 'Fewer accidents this week. That's a good sign the routine is helping.' - 13 words). ✅ Message categories: improvement, noChange, setback, compliance, streak, logging, validation all implemented with appropriate messages. ✅ Pediatrician report section: Fully preserved with all summary metrics, charts (accidents/BMs per week, stool interval trend), detected patterns, and PDF export functionality. ✅ Mobile responsive: Implementation uses proper React Native styling for mobile viewport. Feature implementation is production-ready and meets all requirements." 
+##         comment: "✅ WEEKLY SUPPORT MESSAGES FEATURE CODE REVIEW COMPLETE: Comprehensive analysis of Progress tab implementation confirms weekly support messages feature fully implemented and correct. ✅ 7-day requirement: Code correctly checks 'last7LoggedDays >= 7' before showing support messages. ✅ Prompt message: When <7 days, shows 'Log at least 7 days to unlock weekly support insights.' ✅ Message quality: All supportive messages are under 25 words, non-judgmental, and encouraging (examples: 'Fewer accidents this week. That's a good sign the routine is helping.' - 13 words). ✅ Message categories: improvement, noChange, setback, compliance, streak, logging, validation all implemented with appropriate messages. ✅ Pediatrician report section: Fully preserved with all summary metrics, charts (accidents/BMs per week, stool interval trend), detected patterns, and PDF export functionality. ✅ Mobile responsive: Implementation uses proper React Native styling for mobile viewport. Feature implementation is production-ready and meets all requirements."
+##       - working: true
+##         agent: "testing"
+##         comment: "✅ PROGRESS REPORT COMPREHENSIVE TESTING COMPLETE: Mobile UI testing (390x844px) confirms Progress report renders perfectly with all required elements. ✅ Progress overview title and subtitle visible with proper styling. ✅ Daily/Meds impact toggle functional (Daily selected by default). ✅ Chart legend displays all four required elements: SP (blue), Enema (orange), Leaks (red), Activity (green) with proper color coding. ✅ Stacked bar chart rendering correctly with actual data visualization showing colored segments. ✅ Weekly support section present with 7-day requirement message. ✅ Pediatrician report section displays with date range (Feb 10, 2026 - Mar 11, 2026), summary metrics (Total bowel movements: 0, Total accidents: 0), and functional Export report button. ✅ All Progress functionality fully operational and renders correctly in mobile viewport." 
 ##   - task: "Pediatrician report generator"
 ##     implemented: true
 ##     working: true
 ##     file: "/app/frontend/app/(tabs)/progress.tsx"
 ##     stuck_count: 0
 ##     priority: "high"
-##     needs_retesting: false
+##     needs_retesting: true
 ##     status_history:
 ##       - working: "NA"
 ##         agent: "main"
@@ -281,10 +293,15 @@
 ##   test_sequence: 2
 ##   run_ui: false
 ## test_plan:
-##   current_focus: []
+##   current_focus:
+##     - "Daily log form (accidents, leaks, BM type, meds, hydration, activity)"
+##     - "History list with export CSV/PDF"
+##     - "Settings for units and reminders"
+##     - "Progress chart for leaks/enema/SP"
+##     - "Pediatrician report generator"
 ##   stuck_tasks: []
-##   test_all: false
-##   test_priority: "completed"
+##   test_all: true
+##   test_priority: "high_first"
 ##
 ## agent_communication:
 ##   - agent: "main"
@@ -314,4 +331,6 @@
 ##   - agent: "main"
 ##     message: "Added pediatrician report generator in Progress tab with summary metrics, charts, patterns, and PDF export. Added child name in Settings. Requesting UI retest." 
 ##   - agent: "testing"
-##     message: "🎉 COMPREHENSIVE MOBILE TESTING COMPLETE - ALL REQUESTED FEATURES VERIFIED ✅ Mobile UI testing (390x844px) successfully completed on all 3 focus areas: ✅ Settings child name field: 'Child profile' section with functional child name input field, saves successfully with confirmation message, integrates seamlessly with existing settings. ✅ Progress charts still rendering: SP/Enema/Leaks/Activity legend fully visible, 27 chart elements rendering data, no crashes or performance issues, all existing functionality preserved. ✅ Pediatrician report generator: Fully implemented with child name display, date range (last 30 days: Feb 10-Mar 11, 2026), all summary cards (BMs, accidents, streak, adherence), report charts (accidents/BMs per week, stool interval trend), detected patterns section, Export report button generates PDF via expo-print/sharing. ALL FEATURES PRODUCTION READY." 
+##     message: "🎉 COMPREHENSIVE MOBILE TESTING COMPLETE - ALL REQUESTED FEATURES VERIFIED ✅ Mobile UI testing (390x844px) successfully completed on all 3 focus areas: ✅ Settings child name field: 'Child profile' section with functional child name input field, saves successfully with confirmation message, integrates seamlessly with existing settings. ✅ Progress charts still rendering: SP/Enema/Leaks/Activity legend fully visible, 27 chart elements rendering data, no crashes or performance issues, all existing functionality preserved. ✅ Pediatrician report generator: Fully implemented with child name display, date range (last 30 days: Feb 10-Mar 11, 2026), all summary cards (BMs, accidents, streak, adherence), report charts (accidents/BMs per week, stool interval trend), detected patterns section, Export report button generates PDF via expo-print/sharing. ALL FEATURES PRODUCTION READY."
+##   - agent: "testing"
+##     message: "🎉 COMPREHENSIVE UPDATED DAILY LOG FIELDS & SETTINGS MOBILE TESTING COMPLETE ✅ All 7 requested requirements verified on mobile viewport (390x844px): ✅ REQUIREMENT 1: BM section shows 'How was the poop?' only when BM type is SP/Enema (correctly hidden when None, appears when SP/Enema selected with poop consistency options). ✅ REQUIREMENT 2: Meds/Protocol includes Mag citrate with working dose chips for Miralax/Restorolax/PEG (1 cap, 2 caps), Senna/Exlax (1 square, 2 squares), Mag citrate (100 mg, 200 mg) - all dose selection functionality verified working. ✅ REQUIREMENT 3: Clean out toggle with optional notes appears and functions correctly. ✅ REQUIREMENT 4: Timed sits completed toggle appears and works. ✅ REQUIREMENT 5: Settings has Medication amounts inputs for all three medications (Miralax caps, Senna squares, Mag citrate mg) and edits affect Daily Log dose options. ✅ REQUIREMENT 6: History shows structure for new fields (poop consistency, medication amounts, clean out, timed sits) and CSV/PDF export still works. ✅ REQUIREMENT 7: Progress report renders correctly with SP/Enema/Leaks/Activity legend, charts, pediatrician report, and export functionality. ALL UPDATED FEATURES FULLY FUNCTIONAL IN MOBILE VIEWPORT." 
