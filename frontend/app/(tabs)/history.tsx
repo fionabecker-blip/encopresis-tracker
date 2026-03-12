@@ -12,11 +12,45 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { apiGet } from "../utils/api";
+import { Calendar } from "react-native-calendars";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import SegmentedControl from "../components/SegmentedControl";
+
+const CalendarDay = ({ date, state, marking }) => {
+  if (!date) return null;
+  const marker = marking?.markers;
+  return (
+    <TouchableOpacity
+      style={styles.dayCell}
+      onPress={() => marking?.onPress?.(date.dateString)}
+    >
+      <Text
+        style={[
+          styles.dayText,
+          state === "disabled" && styles.dayTextDisabled,
+          marking?.selected && styles.dayTextSelected,
+        ]}
+      >
+        {date.day}
+      </Text>
+      <View style={styles.markerRow}>
+        {marker?.hasBm ? (
+          <MaterialCommunityIcons name="toilet" size={12} color="#2563EB" />
+        ) : null}
+        {marker?.fecal ? <Ionicons name="water" size={10} color="#7C3F1D" /> : null}
+        {marker?.urine ? <Ionicons name="water" size={10} color="#FACC15" /> : null}
+        {marker?.leaks ? <Ionicons name="water" size={10} color="#F97316" /> : null}
+      </View>
+    </TouchableOpacity>
+  );
+};
 
 export default function HistoryScreen() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
+  const [viewMode, setViewMode] = useState("list");
+  const [selectedDate, setSelectedDate] = useState("");
 
   const fetchEntries = useCallback(async () => {
     setLoading(true);
@@ -143,6 +177,44 @@ export default function HistoryScreen() {
     }
     return value;
   };
+
+  const entriesByDate = entries.reduce((acc, entry) => {
+    if (!entry.date) return acc;
+    if (!acc[entry.date]) acc[entry.date] = [];
+    acc[entry.date].push(entry);
+    return acc;
+  }, {});
+
+  const selectedEntries = selectedDate ? entriesByDate[selectedDate] || [] : [];
+
+  const dateMarkers = entries.reduce((acc, entry) => {
+    if (!entry.date) return acc;
+    const fecal = entry.fecal_accidents ? entry.fecal_accidents > 0 : false;
+    const urine = entry.urine_accidents ? entry.urine_accidents > 0 : false;
+    const leaks = entry.leaks;
+    const bmType = (entry.bm_type || "").toLowerCase();
+    const hasBm = bmType.includes("sp") || bmType.includes("enema");
+    acc[entry.date] = {
+      hasBm,
+      fecal,
+      urine,
+      leaks,
+    };
+    return acc;
+  }, {});
+
+  const markedDates = Object.keys(dateMarkers).reduce((acc, date) => {
+    acc[date] = { markers: dateMarkers[date], onPress: setSelectedDate };
+    return acc;
+  }, {});
+
+  if (selectedDate) {
+    markedDates[selectedDate] = {
+      ...(markedDates[selectedDate] || { markers: {} }),
+      selected: true,
+      onPress: setSelectedDate,
+    };
+  }
 
   const buildCsv = () => {
     const header = [
@@ -304,6 +376,15 @@ export default function HistoryScreen() {
           </View>
         </View>
 
+        <SegmentedControl
+          options={[
+            { label: "List", value: "list" },
+            { label: "Calendar", value: "calendar" },
+          ]}
+          value={viewMode}
+          onChange={setViewMode}
+        />
+
         {loading ? <ActivityIndicator color="#4C6FFF" /> : null}
         {status ? <Text style={styles.status}>{status}</Text> : null}
 
@@ -315,99 +396,193 @@ export default function HistoryScreen() {
           </View>
         ) : null}
 
-        {entries.map((entry) => (
-          <View key={entry.id} style={styles.card}>
-            <Text style={styles.cardTitle}>{entry.date}</Text>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Fecal accidents</Text>
-              <Text style={styles.detailValue}>
-                {formatNumber(entry.fecal_accidents)}
+        {viewMode === "calendar" ? (
+          <View style={styles.calendarCard}>
+            <Calendar
+              onDayPress={(day) => setSelectedDate(day.dateString)}
+              markedDates={markedDates}
+              dayComponent={CalendarDay}
+            />
+
+            <View style={styles.legendRow}>
+              <View style={styles.legendItem}>
+                <MaterialCommunityIcons name="toilet" size={14} color="#2563EB" />
+                <Text style={styles.legendText}>BM</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <Ionicons name="water" size={12} color="#7C3F1D" />
+                <Text style={styles.legendText}>Fecal accident</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <Ionicons name="water" size={12} color="#FACC15" />
+                <Text style={styles.legendText}>Urine accident</Text>
+              </View>
+              <View style={styles.legendItem}>
+                <Ionicons name="water" size={12} color="#F97316" />
+                <Text style={styles.legendText}>Leak</Text>
+              </View>
+            </View>
+
+            <View style={styles.selectedSection}>
+              <Text style={styles.sectionTitle}>
+                {selectedDate ? `Entries for ${selectedDate}` : "Select a date"}
               </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Urine accidents</Text>
-              <Text style={styles.detailValue}>
-                {formatNumber(entry.urine_accidents)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Leaks</Text>
-              <Text style={styles.detailValue}>{formatBoolean(entry.leaks)}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>BM type</Text>
-              <Text style={styles.detailValue}>{formatText(entry.bm_type)}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>BM notes</Text>
-              <Text style={styles.detailValue}>{formatText(entry.bm_notes)}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Poop consistency</Text>
-              <Text style={styles.detailValue}>
-                {formatPoopConsistency(entry.poop_consistency)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Meds/Protocol</Text>
-              <Text style={styles.detailValue}>
-                {formatMedication(entry.medication)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Medication amounts</Text>
-              <Text style={styles.detailValue}>
-                {formatMedicationDoses(entry.medication_doses)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Hydration/Diet</Text>
-              <Text style={styles.detailValue}>
-                {formatMotilityFoods(entry.motility_foods)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Water</Text>
-              <Text style={styles.detailValue}>
-                {entry.water_intake === null || entry.water_intake === undefined
-                  ? "Not logged"
-                  : `${entry.water_intake} ${entry.water_unit ?? ""}`}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Fiber</Text>
-              <Text style={styles.detailValue}>
-                {entry.fiber_intake === null || entry.fiber_intake === undefined
-                  ? "Not logged"
-                  : `${entry.fiber_intake} ${entry.fiber_unit ?? ""}`}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Clean out</Text>
-              <Text style={styles.detailValue}>{formatBoolean(entry.clean_out)}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Clean out notes</Text>
-              <Text style={styles.detailValue}>{formatText(entry.clean_out_notes)}</Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Timed sits completed</Text>
-              <Text style={styles.detailValue}>
-                {formatBoolean(entry.timed_sits_completed)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Activity 30 min</Text>
-              <Text style={styles.detailValue}>
-                {formatBoolean(entry.activity_30_min)}
-              </Text>
-            </View>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Notes</Text>
-              <Text style={styles.detailValue}>{formatText(entry.notes)}</Text>
+              {selectedEntries.length === 0 ? (
+                <Text style={styles.emptyText}>No entries for this day.</Text>
+              ) : (
+                selectedEntries.map((entry) => (
+                  <View key={entry.id} style={styles.card}>
+                    <Text style={styles.cardTitle}>{entry.date}</Text>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Fecal accidents</Text>
+                      <Text style={styles.detailValue}>
+                        {formatNumber(entry.fecal_accidents)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Urine accidents</Text>
+                      <Text style={styles.detailValue}>
+                        {formatNumber(entry.urine_accidents)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Leaks</Text>
+                      <Text style={styles.detailValue}>{formatBoolean(entry.leaks)}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>BM type</Text>
+                      <Text style={styles.detailValue}>{formatText(entry.bm_type)}</Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Poop consistency</Text>
+                      <Text style={styles.detailValue}>
+                        {formatPoopConsistency(entry.poop_consistency)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Meds/Protocol</Text>
+                      <Text style={styles.detailValue}>
+                        {formatMedication(entry.medication)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Medication amounts</Text>
+                      <Text style={styles.detailValue}>
+                        {formatMedicationDoses(entry.medication_doses)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Clean out</Text>
+                      <Text style={styles.detailValue}>
+                        {formatBoolean(entry.clean_out)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Timed sits completed</Text>
+                      <Text style={styles.detailValue}>
+                        {formatBoolean(entry.timed_sits_completed)}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
             </View>
           </View>
-        ))}
+        ) : (
+          entries.map((entry) => (
+            <View key={entry.id} style={styles.card}>
+              <Text style={styles.cardTitle}>{entry.date}</Text>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Fecal accidents</Text>
+                <Text style={styles.detailValue}>
+                  {formatNumber(entry.fecal_accidents)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Urine accidents</Text>
+                <Text style={styles.detailValue}>
+                  {formatNumber(entry.urine_accidents)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Leaks</Text>
+                <Text style={styles.detailValue}>{formatBoolean(entry.leaks)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>BM type</Text>
+                <Text style={styles.detailValue}>{formatText(entry.bm_type)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>BM notes</Text>
+                <Text style={styles.detailValue}>{formatText(entry.bm_notes)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Poop consistency</Text>
+                <Text style={styles.detailValue}>
+                  {formatPoopConsistency(entry.poop_consistency)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Meds/Protocol</Text>
+                <Text style={styles.detailValue}>
+                  {formatMedication(entry.medication)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Medication amounts</Text>
+                <Text style={styles.detailValue}>
+                  {formatMedicationDoses(entry.medication_doses)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Hydration/Diet</Text>
+                <Text style={styles.detailValue}>
+                  {formatMotilityFoods(entry.motility_foods)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Water</Text>
+                <Text style={styles.detailValue}>
+                  {entry.water_intake === null || entry.water_intake === undefined
+                    ? "Not logged"
+                    : `${entry.water_intake} ${entry.water_unit ?? ""}`}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Fiber</Text>
+                <Text style={styles.detailValue}>
+                  {entry.fiber_intake === null || entry.fiber_intake === undefined
+                    ? "Not logged"
+                    : `${entry.fiber_intake} ${entry.fiber_unit ?? ""}`}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Clean out</Text>
+                <Text style={styles.detailValue}>{formatBoolean(entry.clean_out)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Clean out notes</Text>
+                <Text style={styles.detailValue}>{formatText(entry.clean_out_notes)}</Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Timed sits completed</Text>
+                <Text style={styles.detailValue}>
+                  {formatBoolean(entry.timed_sits_completed)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Activity 30 min</Text>
+                <Text style={styles.detailValue}>
+                  {formatBoolean(entry.activity_30_min)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Notes</Text>
+                <Text style={styles.detailValue}>{formatText(entry.notes)}</Text>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -491,5 +666,40 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: "#64748B",
+  },
+  calendarCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    padding: 12,
+    gap: 12,
+  },
+  dayCell: {
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  dayText: {
+    fontSize: 12,
+    color: "#0F172A",
+  },
+  dayTextDisabled: {
+    color: "#CBD5F5",
+  },
+  dayTextSelected: {
+    color: "#4C6FFF",
+    fontWeight: "700",
+  },
+  markerRow: {
+    flexDirection: "row",
+    gap: 2,
+    marginTop: 2,
+  },
+  legendText: {
+    fontSize: 11,
+    color: "#475569",
+  },
+  selectedSection: {
+    gap: 12,
   },
 });
