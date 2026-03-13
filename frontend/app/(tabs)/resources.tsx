@@ -28,6 +28,11 @@ export default function ResourcesScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.title}>Resources</Text>
         <Text style={styles.subtitle}>External links open in your browser.</Text>
+        <Text style={styles.attribution}>
+          Educational resources from pediatric specialists and children’s hospitals are
+          provided for informational purposes. This app is not affiliated with or
+          endorsed by the creators of these materials or medical protocols.
+        </Text>
         <View style={styles.list}>
           {resources.map((resource) => (
             <TouchableOpacity
@@ -63,6 +68,11 @@ const styles = StyleSheet.create({
   subtitle: {
     color: "#64748B",
     fontSize: 14,
+  },
+  attribution: {
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 18,
   },
   list: {
     gap: 12,

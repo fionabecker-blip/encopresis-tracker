@@ -69,6 +69,8 @@ export default function LogScreen() {
   const [cleanOut, setCleanOut] = useState("no");
   const [cleanOutNotes, setCleanOutNotes] = useState("");
   const [timedSits, setTimedSits] = useState("no");
+  const [abdominalPain, setAbdominalPain] = useState("no");
+  const [withholdingBehavior, setWithholdingBehavior] = useState("no");
   const [activity30Min, setActivity30Min] = useState("no");
   const [notes, setNotes] = useState("");
   const [settings, setSettings] = useState(defaultSettings);
@@ -102,6 +104,8 @@ export default function LogScreen() {
     setCleanOut("no");
     setCleanOutNotes("");
     setTimedSits("no");
+    setAbdominalPain("no");
+    setWithholdingBehavior("no");
     setActivity30Min("no");
     setNotes("");
   };
@@ -161,6 +165,8 @@ export default function LogScreen() {
       payload.clean_out = cleanOut === "yes";
       if (cleanOutNotes.trim()) payload.clean_out_notes = cleanOutNotes.trim();
       payload.timed_sits_completed = timedSits === "yes";
+      payload.abdominal_pain = abdominalPain === "yes";
+      payload.withholding_behavior = withholdingBehavior === "yes";
       if (notes.trim()) payload.notes = notes.trim();
 
       await apiSend("/entries", "POST", payload);
@@ -245,6 +251,26 @@ export default function LogScreen() {
                 />
               </View>
             ) : null}
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Symptoms/Notables</Text>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Abdominal pain</Text>
+              <SegmentedControl
+                options={yesNoOptions}
+                value={abdominalPain}
+                onChange={setAbdominalPain}
+              />
+            </View>
+            <View style={styles.stack}>
+              <Text style={styles.label}>Withholding behavior</Text>
+              <SegmentedControl
+                options={yesNoOptions}
+                value={withholdingBehavior}
+                onChange={setWithholdingBehavior}
+              />
+            </View>
           </View>
 
           <View style={styles.section}>

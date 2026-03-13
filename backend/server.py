@@ -54,6 +54,8 @@ class EntryBase(BaseModel):
     clean_out: Optional[bool] = None
     clean_out_notes: Optional[str] = None
     timed_sits_completed: Optional[bool] = None
+    abdominal_pain: Optional[bool] = None
+    withholding_behavior: Optional[bool] = None
     activity_30_min: Optional[bool] = None
     notes: Optional[str] = None
 
@@ -80,6 +82,8 @@ class EntryUpdate(BaseModel):
     clean_out: Optional[bool] = None
     clean_out_notes: Optional[str] = None
     timed_sits_completed: Optional[bool] = None
+    abdominal_pain: Optional[bool] = None
+    withholding_behavior: Optional[bool] = None
     activity_30_min: Optional[bool] = None
     notes: Optional[str] = None
 

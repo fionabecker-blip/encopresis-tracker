@@ -235,6 +235,8 @@ export default function HistoryScreen() {
       "Clean out",
       "Clean out notes",
       "Timed sits completed",
+      "Abdominal pain",
+      "Withholding behavior",
       "Activity 30 min",
       "Notes",
     ];
@@ -256,6 +258,8 @@ export default function HistoryScreen() {
       entry.clean_out === undefined ? "" : entry.clean_out ? "Yes" : "No",
       entry.clean_out_notes ?? "",
       entry.timed_sits_completed === undefined ? "" : entry.timed_sits_completed ? "Yes" : "No",
+      entry.abdominal_pain === undefined ? "" : entry.abdominal_pain ? "Yes" : "No",
+      entry.withholding_behavior === undefined ? "" : entry.withholding_behavior ? "Yes" : "No",
       entry.activity_30_min === undefined ? "" : entry.activity_30_min ? "Yes" : "No",
       entry.notes ?? "",
     ]);
@@ -306,6 +310,8 @@ export default function HistoryScreen() {
           <td>${entry.clean_out === undefined ? "" : entry.clean_out ? "Yes" : "No"}</td>
           <td>${entry.clean_out_notes ?? ""}</td>
           <td>${entry.timed_sits_completed === undefined ? "" : entry.timed_sits_completed ? "Yes" : "No"}</td>
+          <td>${entry.abdominal_pain === undefined ? "" : entry.abdominal_pain ? "Yes" : "No"}</td>
+          <td>${entry.withholding_behavior === undefined ? "" : entry.withholding_behavior ? "Yes" : "No"}</td>
           <td>${entry.activity_30_min === undefined ? "" : entry.activity_30_min ? "Yes" : "No"}</td>
           <td>${entry.notes ?? ""}</td>
         </tr>`
@@ -334,6 +340,8 @@ export default function HistoryScreen() {
                 <th style="border: 1px solid #ccc; padding: 6px;">Clean out</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Clean out notes</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Timed sits</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Abdominal pain</th>
+                <th style="border: 1px solid #ccc; padding: 6px;">Withholding behavior</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Activity 30 min</th>
                 <th style="border: 1px solid #ccc; padding: 6px;">Notes</th>
               </tr>
@@ -483,6 +491,18 @@ export default function HistoryScreen() {
                         {formatBoolean(entry.timed_sits_completed)}
                       </Text>
                     </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Abdominal pain</Text>
+                      <Text style={styles.detailValue}>
+                        {formatBoolean(entry.abdominal_pain)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Withholding behavior</Text>
+                      <Text style={styles.detailValue}>
+                        {formatBoolean(entry.withholding_behavior)}
+                      </Text>
+                    </View>
                   </View>
                 ))
               )}
@@ -568,6 +588,18 @@ export default function HistoryScreen() {
                 <Text style={styles.detailLabel}>Timed sits completed</Text>
                 <Text style={styles.detailValue}>
                   {formatBoolean(entry.timed_sits_completed)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Abdominal pain</Text>
+                <Text style={styles.detailValue}>
+                  {formatBoolean(entry.abdominal_pain)}
+                </Text>
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Withholding behavior</Text>
+                <Text style={styles.detailValue}>
+                  {formatBoolean(entry.withholding_behavior)}
                 </Text>
               </View>
               <View style={styles.detailRow}>

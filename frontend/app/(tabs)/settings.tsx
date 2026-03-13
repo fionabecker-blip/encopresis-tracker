@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
 import SegmentedControl from "../components/SegmentedControl";
 import { defaultSettings, loadSettings, saveSettings } from "../utils/storage";
@@ -44,6 +45,7 @@ export default function SettingsScreen() {
   const [reminderTime, setReminderTime] = useState("20:00");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const router = useRouter();
 
   useEffect(() => {
     loadSettings().then((stored) => {
@@ -226,7 +228,8 @@ export default function SettingsScreen() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Daily reminder</Text>
+            <Text style={styles.sectionTitle}>Reminders</Text>
+            <Text style={styles.helperText}>Notification preferences</Text>
             <View style={styles.stack}>
               <Text style={styles.label}>Enable reminder</Text>
               <SegmentedControl
@@ -245,6 +248,40 @@ export default function SettingsScreen() {
                 autoCapitalize="none"
               />
             </View>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Legal</Text>
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => router.push("/legal/medical-disclaimer")}
+            >
+              <Text style={styles.linkText}>Medical Disclaimer</Text>
+              <Text style={styles.linkArrow}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => router.push("/legal/terms")}
+            >
+              <Text style={styles.linkText}>Terms of Use</Text>
+              <Text style={styles.linkArrow}>›</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.linkRow}
+              onPress={() => router.push("/legal/privacy")}
+            >
+              <Text style={styles.linkText}>Privacy Policy</Text>
+              <Text style={styles.linkArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Support</Text>
+            <Text style={styles.bodyText}>
+              This app is a tracking and informational tool only and does not diagnose
+              or treat medical conditions.
+            </Text>
+            <Text style={styles.bodyText}>Contact: seafaress@protonmail.com</Text>
           </View>
 
           <TouchableOpacity style={styles.button} onPress={handleSave} disabled={saving}>
@@ -294,6 +331,27 @@ const styles = StyleSheet.create({
   helperText: {
     color: "#94A3B8",
     fontSize: 12,
+  },
+  linkRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  linkText: {
+    color: "#0F172A",
+    fontWeight: "500",
+  },
+  linkArrow: {
+    color: "#94A3B8",
+    fontSize: 18,
+  },
+  bodyText: {
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 18,
   },
   stack: {
     gap: 8,
