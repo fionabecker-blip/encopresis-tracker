@@ -30,8 +30,9 @@ export default function DisclaimerScreen({ onAccept }) {
         <Text style={styles.title}>Important Information</Text>
 
         <Text style={styles.bodyText}>
-          This app is intended to help parents track bowel routines and symptoms in
-          children with constipation or encopresis.
+          Created by parents of a child who experienced encopresis, this app helps
+          families track bowel routines and symptoms in children with constipation or
+          encopresis.
         </Text>
         <Text style={styles.bodyText}>
           This app does not provide medical advice, diagnosis, or treatment. The
@@ -41,10 +42,6 @@ export default function DisclaimerScreen({ onAccept }) {
         <Text style={styles.bodyText}>
           Always consult a qualified healthcare professional regarding your child’s
           medical care and treatment.
-        </Text>
-        <Text style={styles.bodyText}>
-          This app was created by parents of a child who experienced encopresis and is
-          intended as a supportive tracking tool for families.
         </Text>
         <Text style={styles.bodyText}>
           Some resources in the app may link to external educational materials from
