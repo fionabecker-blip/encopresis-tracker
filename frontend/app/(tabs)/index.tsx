@@ -17,8 +17,8 @@ import { defaultSettings, loadSettings } from "../utils/storage";
 
 const bmOptions = [
   { label: "SP", value: "sp" },
-  { label: "Enema", value: "enema" },
-  { label: "None", value: "none" },
+  { label: "Suppository BM", value: "enema" },
+  { label: "No BM", value: "none" },
 ];
 
 const yesNoOptions = [
@@ -243,7 +243,7 @@ export default function LogScreen() {
                   placeholder="Any details about SP/enema"
                   style={styles.input}
                 />
-                <Text style={styles.label}>How was the poop?</Text>
+                <Text style={styles.label}>How was the consistency?</Text>
                 <SegmentedControl
                   options={poopOptions}
                   value={poopConsistency}
