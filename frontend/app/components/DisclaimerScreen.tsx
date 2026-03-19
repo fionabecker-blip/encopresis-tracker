@@ -50,8 +50,7 @@ export default function DisclaimerScreen({ onAccept }) {
           Some resources in the app may link to external educational materials from
           pediatric specialists, children’s hospitals, or other organizations. These
           resources are provided for informational purposes only. This app is not
-          affiliated with or endorsed by the creators of those materials or medical
-          protocols.
+          affiliated with any of the externally linked material or owners thereof.
         </Text>
         <Text style={styles.bodyText}>
           Use of this app is at your own discretion. The developers of this app are not

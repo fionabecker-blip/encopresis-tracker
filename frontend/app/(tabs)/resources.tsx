@@ -30,8 +30,8 @@ export default function ResourcesScreen() {
         <Text style={styles.subtitle}>External links open in your browser.</Text>
         <Text style={styles.attribution}>
           Educational resources from pediatric specialists and children’s hospitals are
-          provided for informational purposes. This app is not affiliated with or
-          endorsed by the creators of these materials or medical protocols.
+          provided for informational purposes. This app is not affiliated with any of
+          the externally linked material or owners thereof.
         </Text>
         <View style={styles.list}>
           {resources.map((resource) => (
