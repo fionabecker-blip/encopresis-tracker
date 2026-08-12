@@ -1,27 +1,62 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { apiGet } from "../utils/api";
-import { loadSettings } from "../utils/storage";
+import { loadEntries, loadSettings } from "../utils/storage";
+import type { Entry } from "../types";
+import { useTheme } from "../../src/theme/useTheme";
+import { type Theme } from "../../src/theme/tokens";
+// The exported PDF is its own document, not a screenshot of the app: white
+// stock, no icons, and never the device color scheme. See reportTemplate.
+import {
+  loadReportFontCss,
+  renderBarChart,
+  renderLineChart,
+  renderReportDocument,
+} from "../../src/report/reportTemplate";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
+
+// Escape user-entered text before interpolating it into export HTML, so
+// names containing <, >, & can't inject markup into the generated PDF.
+const esc = (value: unknown) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+// Filesystem-safe slug for child name, e.g. "Alex K." -> "alex-k".
+const slugify = (value: string) => {
+  const trimmed = (value || "").trim().toLowerCase();
+  if (!trimmed) return "child";
+  return trimmed
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40) || "child";
+};
 import SegmentedControl from "../components/SegmentedControl";
+import Card, { CardTitle } from "../../src/components/Card";
+import PrimaryButton from "../../src/components/PrimaryButton";
+import ScreenHeader from "../../src/components/ScreenHeader";
+import EmptyState from "../../src/components/EmptyState";
 
 const chartHeight = 220;
 
-const colors = {
-  sp: "#2563EB",
-  enema: "#F59E0B",
-  leaks: "#EF4444",
-  activity: "#10B981",
-};
+// Semantic chart colors. `leaks` and `accidents` deliberately resolve to the
+// same color — clinically they are two symptoms of the same problem.
+const makeChartColors = (t: Theme) => ({
+  sp: t.data.chart.spontaneous,
+  enema: t.data.chart.enema,
+  leaks: t.data.chart.leaks,
+  activity: t.data.chart.activity,
+});
 
 const viewOptions = [
   { label: "Daily", value: "daily" },
@@ -111,6 +146,8 @@ const formatFullDate = (date) => {
 };
 
 const BarChart = ({ labels, values, color }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const maxValue = Math.max(1, ...values);
   const chartHeight = 140;
   const barWidth = 24;
@@ -134,6 +171,8 @@ const BarChart = ({ labels, values, color }) => {
 };
 
 const LineChart = ({ labels, values }) => {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   if (!values.length) {
     return <Text style={styles.emptyText}>Not enough stool intervals yet.</Text>;
   }
@@ -189,7 +228,11 @@ const LineChart = ({ labels, values }) => {
 };
 
 export default function ProgressScreen() {
-  const [entries, setEntries] = useState([]);
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const colors = useMemo(() => makeChartColors(theme), [theme]);
+
+  const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("");
   const [chartMode, setChartMode] = useState("daily");
@@ -199,7 +242,7 @@ export default function ProgressScreen() {
     setLoading(true);
     setStatus("");
     try {
-      const data = await apiGet("/entries");
+      const data = await loadEntries();
       const sorted = [...data].sort((a, b) =>
         (a.date || "").localeCompare(b.date || "")
       );
@@ -308,18 +351,45 @@ export default function ProgressScreen() {
     0
   );
 
-  let currentStreak = 0;
+  // Longest accident-free streak within the 30-day range.
   let longestStreak = 0;
-  rangeDates.forEach((date) => {
-    const key = date.toISOString().split("T")[0];
-    const entry = entryMap.get(key);
-    if (entry && getAccidents(entry) === 0) {
-      currentStreak += 1;
-      longestStreak = Math.max(longestStreak, currentStreak);
-    } else {
-      currentStreak = 0;
+  {
+    let run = 0;
+    rangeDates.forEach((date) => {
+      const key = date.toISOString().split("T")[0];
+      const entry = entryMap.get(key);
+      if (entry && getAccidents(entry) === 0) {
+        run += 1;
+        longestStreak = Math.max(longestStreak, run);
+      } else {
+        run = 0;
+      }
+    });
+  }
+
+  // Current streaks count backwards from today. Days without an entry break the streak,
+  // so this rewards consistent logging as well as accident-free days.
+  const countCurrentStreak = (predicate: (entry: any) => boolean) => {
+    let count = 0;
+    for (let i = rangeDates.length - 1; i >= 0; i -= 1) {
+      const key = rangeDates[i].toISOString().split("T")[0];
+      const entry = entryMap.get(key);
+      if (entry && predicate(entry)) {
+        count += 1;
+      } else {
+        break;
+      }
     }
-  });
+    return count;
+  };
+
+  const currentAccidentFreeStreak = countCurrentStreak(
+    (entry) => getAccidents(entry) === 0
+  );
+  const currentLoggingStreak = countCurrentStreak(() => true);
+  const currentTimedSitsStreak = countCurrentStreak(
+    (entry) => entry.timed_sits_completed === true
+  );
 
   const stoolIntervals = [];
   for (let i = 1; i < stoolDates.length; i += 1) {
@@ -366,11 +436,157 @@ export default function ProgressScreen() {
 
   const weekLabels = accidentsPerWeek.map((_, index) => `Week ${index + 1}`);
 
+  // ----- Streaks & Weeks: weekly clean-day view -----
+  // "Clean" = no fecal/urine accidents and no leaks/smears that day.
+  // The thin second track (% days with a BM) catches the risky pattern of
+  // "clean but not pooping" that often precedes a blowout.
+  const DAY_MS = 1000 * 60 * 60 * 24;
+  const weeklyStats = Array.from({ length: weeksCount }, (_, index) => {
+    const weekStart = new Date(startDate.getTime() + index * 7 * DAY_MS);
+    const weekEnd = new Date(
+      Math.min(weekStart.getTime() + 6 * DAY_MS, today.getTime())
+    );
+    return {
+      weekStart,
+      weekEnd,
+      logged: 0,
+      clean: 0,
+      bm: 0,
+      meds: new Set<string>(),
+      activities: new Set<string>(),
+    };
+  });
+
+  rangeDates.forEach((date) => {
+    const weekIndex = Math.min(
+      weeksCount - 1,
+      Math.floor((date.getTime() - startDate.getTime()) / (7 * DAY_MS))
+    );
+    const stats = weeklyStats[weekIndex];
+    const entry = entryMap.get(date.toISOString().split("T")[0]);
+    if (!entry || !stats) return;
+    stats.logged += 1;
+    if (getAccidents(entry) === 0) stats.clean += 1;
+    const bmType = normalizeBmType(entry.bm_type);
+    if (bmType.includes("sp") || bmType.includes("enema")) stats.bm += 1;
+    getMedList(entry.medication).forEach((med) => {
+      const normalized = normalizeMed(med);
+      if (normalized && !normalized.includes("none")) stats.meds.add(String(med));
+    });
+    (entry.activity_types || []).forEach((activity) =>
+      stats.activities.add(String(activity))
+    );
+  });
+
+  const weeklyView = weeklyStats.map((stats, index) => {
+    const cleanPct = stats.logged ? stats.clean / stats.logged : 0;
+    const bmPct = stats.logged ? stats.bm / stats.logged : 0;
+    const prev = index > 0 ? weeklyStats[index - 1] : null;
+    const prevCleanPct = prev && prev.logged ? prev.clean / prev.logged : null;
+
+    // "What changed is good": only surface a note when this week meaningfully
+    // improved on the last one and both weeks have enough data to compare.
+    let changeNote = "";
+    if (
+      prev &&
+      prev.logged >= 3 &&
+      stats.logged >= 3 &&
+      prevCleanPct !== null &&
+      cleanPct - prevCleanPct >= 0.15
+    ) {
+      const newMeds = [...stats.meds].filter((med) => !prev.meds.has(med));
+      const newActivities = [...stats.activities].filter(
+        (activity) => !prev.activities.has(activity)
+      );
+      const additions = [...newMeds, ...newActivities];
+      changeNote = additions.length
+        ? `Better week \u2014 new this week: ${additions.join(", ")}`
+        : "Better week on the same routine \u2014 it\u2019s working. Keep going.";
+    }
+
+    return {
+      key: `week-${index}`,
+      label: `${formatDisplayDate(stats.weekStart)}\u2013${formatDisplayDate(stats.weekEnd)}`,
+      logged: stats.logged,
+      clean: stats.clean,
+      bm: stats.bm,
+      cleanPct,
+      bmPct,
+      changeNote,
+    };
+  });
+  const hasWeeklyData = weeklyView.some((week) => week.logged > 0);
+
   const intervalData = stoolDates.slice(1).map((date, index) => {
     return {
+      date,
       label: formatDisplayDate(date),
       value: stoolIntervals[index] || 0,
     };
+  });
+
+  // ----- Report milestones -----
+  // The only events that earn an apricot marker in the exported charts. Kept
+  // deliberately narrow: a clinician should read apricot as "something changed
+  // here", not as generic emphasis.
+  const milestoneDates: { date: Date; label: string }[] = [];
+
+  const firstSpontaneous = rangeDates.find((date) => {
+    const entry = entryMap.get(date.toISOString().split("T")[0]);
+    return entry ? normalizeBmType(entry.bm_type).includes("sp") : false;
+  });
+  if (firstSpontaneous) {
+    milestoneDates.push({
+      date: firstSpontaneous,
+      label: `first spontaneous BM ${formatDisplayDate(firstSpontaneous)}`,
+    });
+  }
+
+  // A "med change" is the medication set differing from the previous logged
+  // day. The first logged day establishes the baseline and is not a change.
+  let previousMeds: string | null = null;
+  rangeDates.forEach((date) => {
+    const entry = entryMap.get(date.toISOString().split("T")[0]);
+    if (!entry) return;
+    const meds = getMedList(entry.medication)
+      .map((med) => normalizeMed(med))
+      .filter((med) => med && !med.includes("none"))
+      .sort()
+      .join("|");
+    if (previousMeds !== null && meds !== previousMeds) {
+      milestoneDates.push({
+        date,
+        label: `med change ${formatDisplayDate(date)}`,
+      });
+    }
+    previousMeds = meds;
+  });
+
+  /** Milestone note printed under a chart, or "" when there are none to mark. */
+  const milestoneNote = (indices: Set<number>, labels: string[]) =>
+    indices.size ? `Apricot marks: ${labels.join("; ")}.` : "";
+
+  const milestoneWeeks = new Set<number>();
+  const milestoneWeekLabels: string[] = [];
+  milestoneDates.forEach(({ date, label }) => {
+    const weekIndex = Math.floor(
+      (date.getTime() - startDate.getTime()) / (7 * DAY_MS)
+    );
+    if (weekIndex < 0 || weekIndex >= weeksCount) return;
+    milestoneWeeks.add(weekIndex);
+    milestoneWeekLabels.push(label);
+  });
+
+  const milestoneIntervals = new Set<number>();
+  const milestoneIntervalLabels: string[] = [];
+  milestoneDates.forEach(({ date, label }) => {
+    const key = date.toISOString().split("T")[0];
+    const index = intervalData.findIndex(
+      (item) => item.date.toISOString().split("T")[0] === key
+    );
+    if (index === -1) return;
+    milestoneIntervals.add(index);
+    milestoneIntervalLabels.push(label);
   });
 
   let accidentsWhenLongInterval = 0;
@@ -515,106 +731,61 @@ export default function ProgressScreen() {
     }
   }
 
-  const buildBarsHtml = (labels, values, color) => {
-    const maxValue = Math.max(1, ...values);
-    return `
-      <div style="display:flex; align-items:flex-end; gap:12px; height:120px; margin-top:8px;">
-        ${values
-          .map((value, index) => {
-            const height = (value / maxValue) * 100;
-            return `
-              <div style="display:flex; flex-direction:column; align-items:center; font-size:10px;">
-                <div style="width:20px; height:${height}px; background:${color}; border-radius:4px;"></div>
-                <div style="margin-top:4px; font-weight:600;">${value}</div>
-                <div>${labels[index]}</div>
-              </div>
-            `;
-          })
-          .join("")}
-      </div>
-    `;
-  };
+  const buildReportHtml = (fontCss: string) => {
+    const summaryRow = (label: string, value: string) => `
+      <tr><td>${label}</td><td class="num">${value}</td></tr>`;
 
-  const buildLineHtml = (labels, values) => {
-    if (!values.length) {
-      return `<div style="font-size:12px; color:#64748B;">Not enough stool intervals yet.</div>`;
-    }
-    const width = 320;
-    const height = 120;
-    const maxValue = Math.max(1, ...values);
-    const step = values.length > 1 ? (width - 40) / (values.length - 1) : 0;
-    const points = values
-      .map((value, index) => {
-        const x = 20 + index * step;
-        const y = height - (value / maxValue) * (height - 20) + 10;
-        return `${x},${y}`;
-      })
-      .join(" ");
-    return `
-      <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-        <polyline points="${points}" fill="none" stroke="#4C6FFF" stroke-width="2" />
-        ${values
-          .map((value, index) => {
-            const x = 20 + index * step;
-            const y = height - (value / maxValue) * (height - 20) + 10;
-            return `<circle cx="${x}" cy="${y}" r="3" fill="#4C6FFF" />`;
-          })
-          .join("")}
-      </svg>
-      <div style="display:flex; gap:12px; font-size:10px; margin-top:4px; color:#64748B;">
-        ${labels.map((label) => `<span>${label}</span>`).join("")}
-      </div>
-    `;
-  };
+    const summaryPage = `
+      <h2>Summary</h2>
+      <table>
+        <tbody>
+          ${summaryRow("Total bowel movements", String(totalBowelMovements))}
+          ${summaryRow("Total accidents", String(totalAccidents))}
+          ${summaryRow("Current accident-free streak", `${currentAccidentFreeStreak} days`)}
+          ${summaryRow("Longest accident-free streak", `${longestStreak} days`)}
+          ${summaryRow("Medication adherence", adherencePercent === null ? "N/A" : `${adherencePercent}%`)}
+          ${summaryRow("Current timed-sits streak", `${currentTimedSitsStreak} days`)}
+          ${summaryRow("Avg days between stools", averageInterval === null ? "N/A" : averageInterval.toFixed(1))}
+          ${summaryRow("Timed sits completed (days)", String(timedSitsDays))}
+        </tbody>
+      </table>
 
-  const buildReportHtml = () => {
-    return `
-      <html>
-        <body style="font-family: Helvetica, Arial; padding: 24px; color:#0F172A;">
-          <h2>Pediatrician Report</h2>
-          <p><strong>Child name:</strong> ${reportChildName}</p>
-          <p><strong>Date range:</strong> ${reportStart} - ${reportEnd}</p>
+      <h2>Detected patterns</h2>
+      <ul class="plain">
+        ${patterns.map((pattern) => `<li>${esc(pattern)}</li>`).join("")}
+      </ul>`;
 
-          <h3>Summary</h3>
-          <table style="width:100%; border-collapse:collapse; font-size:12px;">
-            <tr>
-              <td style="border:1px solid #E2E8F0; padding:8px;">Total bowel movements</td>
-              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;">${totalBowelMovements}</td>
-              <td style="border:1px solid #E2E8F0; padding:8px;">Total accidents</td>
-              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;">${totalAccidents}</td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #E2E8F0; padding:8px;">Longest accident-free streak</td>
-              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;">${longestStreak} days</td>
-              <td style="border:1px solid #E2E8F0; padding:8px;">Medication adherence</td>
-              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;">${adherencePercent === null ? "N/A" : `${adherencePercent}%`}</td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #E2E8F0; padding:8px;">Avg days between stools</td>
-              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;" colspan="3">${averageInterval === null ? "N/A" : averageInterval.toFixed(1)}</td>
-            </tr>
-            <tr>
-              <td style="border:1px solid #E2E8F0; padding:8px;">Timed sits completed (days)</td>
-              <td style="border:1px solid #E2E8F0; padding:8px; font-weight:600;" colspan="3">${timedSitsDays}</td>
-            </tr>
-          </table>
+    const chartsPage = `
+      <h2>Accidents per week</h2>
+      ${renderBarChart({
+        labels: weekLabels,
+        values: accidentsPerWeek,
+        milestones: milestoneWeeks,
+        note: milestoneNote(milestoneWeeks, milestoneWeekLabels),
+      })}
 
-          <h3>Accidents per week</h3>
-          ${buildBarsHtml(weekLabels, accidentsPerWeek, "#EF4444")}
+      <h2>Bowel movements per week</h2>
+      ${renderBarChart({
+        labels: weekLabels,
+        values: bmsPerWeek,
+        milestones: milestoneWeeks,
+        note: milestoneNote(milestoneWeeks, milestoneWeekLabels),
+      })}
 
-          <h3>Bowel movements per week</h3>
-          ${buildBarsHtml(weekLabels, bmsPerWeek, "#2563EB")}
+      <h2>Stool interval trend (days between stools)</h2>
+      ${renderLineChart({
+        labels: intervalData.map((item) => item.label),
+        values: intervalData.map((item) => item.value),
+        milestones: milestoneIntervals,
+        note: milestoneNote(milestoneIntervals, milestoneIntervalLabels),
+      })}`;
 
-          <h3>Stool interval trend (days between stools)</h3>
-          ${buildLineHtml(intervalData.map((item) => item.label), intervalData.map((item) => item.value))}
-
-          <h3>Detected patterns</h3>
-          <ul>
-            ${patterns.map((pattern) => `<li>${pattern}</li>`).join("")}
-          </ul>
-        </body>
-      </html>
-    `;
+    return renderReportDocument({
+      fontCss,
+      patient: reportChildName,
+      range: `${reportStart} \u2013 ${reportEnd}`,
+      pages: [summaryPage, chartsPage],
+    });
   };
 
   const handleExportReport = async () => {
@@ -623,9 +794,32 @@ export default function ProgressScreen() {
       return;
     }
     try {
-      const html = buildReportHtml();
+      const fontCss = await loadReportFontCss();
+      const html = buildReportHtml(fontCss);
       const file = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(file.uri, { dialogTitle: "Share pediatrician report" });
+      const startKey = startDate.toISOString().split("T")[0];
+      const endKey = today.toISOString().split("T")[0];
+      const fileName = `pediatrician-report-${slugify(childName)}-${startKey}-to-${endKey}.pdf`;
+      // Use cacheDirectory (not documentDirectory) so health data doesn't
+      // persist in iCloud-backed storage; files are deleted after sharing.
+      const namedUri = `${FileSystem.cacheDirectory}${fileName}`;
+      try {
+        try {
+          await FileSystem.deleteAsync(namedUri, { idempotent: true });
+          await FileSystem.moveAsync({ from: file.uri, to: namedUri });
+        } catch {
+          await Sharing.shareAsync(file.uri, { dialogTitle: "Share pediatrician report" });
+          return;
+        }
+        await Sharing.shareAsync(namedUri, {
+          mimeType: "application/pdf",
+          dialogTitle: "Share pediatrician report",
+          UTI: "com.adobe.pdf",
+        });
+      } finally {
+        await FileSystem.deleteAsync(namedUri, { idempotent: true });
+        await FileSystem.deleteAsync(file.uri, { idempotent: true });
+      }
     } catch (error) {
       setStatus("Unable to export report.");
     }
@@ -634,24 +828,113 @@ export default function ProgressScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Progress overview</Text>
-        <Text style={styles.subtitle}>
-          Track daily outcomes or compare meds/protocol impact with activity.
-        </Text>
+        <ScreenHeader
+          title="Progress overview"
+          subtitle="Track daily outcomes or compare meds/protocol impact with activity."
+        />
 
         <SegmentedControl options={viewOptions} value={chartMode} onChange={setChartMode} />
 
-        {loading ? <ActivityIndicator color="#4C6FFF" /> : null}
+        {!loading && entries.length > 0 ? (
+          <Card>
+            <View style={styles.streakHeader}>
+              <CardTitle>Streaks</CardTitle>
+              <Text style={styles.streakHint}>
+                Counting back from today. Skipped days reset the count.
+              </Text>
+            </View>
+            <View style={styles.streakRow}>
+              <View style={styles.streakHero}>
+                <Text style={styles.streakHeroEmoji}>
+                  {currentAccidentFreeStreak >= 7
+                    ? "\uD83C\uDF1F"
+                    : currentAccidentFreeStreak >= 3
+                      ? "\uD83D\uDD25"
+                      : "\u2728"}
+                </Text>
+                <Text style={styles.streakHeroNumber}>{currentAccidentFreeStreak}</Text>
+                <Text style={styles.streakHeroLabel}>
+                  {currentAccidentFreeStreak === 1 ? "day" : "days"} accident-free
+                </Text>
+              </View>
+              <View style={styles.streakSecondary}>
+                <View style={styles.streakChip}>
+                  <Text style={styles.streakChipNumber}>{longestStreak}</Text>
+                  <Text style={styles.streakChipLabel}>Best (30d)</Text>
+                </View>
+                <View style={styles.streakChip}>
+                  <Text style={styles.streakChipNumber}>{currentLoggingStreak}</Text>
+                  <Text style={styles.streakChipLabel}>Logging streak</Text>
+                </View>
+                <View style={styles.streakChip}>
+                  <Text style={styles.streakChipNumber}>{currentTimedSitsStreak}</Text>
+                  <Text style={styles.streakChipLabel}>Timed sits streak</Text>
+                </View>
+              </View>
+            </View>
+          </Card>
+        ) : null}
+
+        {!loading && hasWeeklyData ? (
+          <Card>
+            <View style={styles.streakHeader}>
+              <CardTitle>Your weeks</CardTitle>
+              <Text style={styles.streakHint}>
+                Green = clean days (no accidents, no leaks/smears). Thin blue =
+                days with a BM. Both bars full is the goal.
+              </Text>
+            </View>
+            {weeklyView.map((week) =>
+              week.logged === 0 ? null : (
+                <View key={week.key} style={styles.weekRow}>
+                  <View style={styles.weekHeaderRow}>
+                    <Text style={styles.weekLabel}>{week.label}</Text>
+                    <Text style={styles.weekCounts}>
+                      {week.clean}/{week.logged} clean {"\u00B7"} {week.bm}/
+                      {week.logged} BM days
+                    </Text>
+                  </View>
+                  <View style={styles.weekTrack}>
+                    <View
+                      style={[
+                        styles.weekFillClean,
+                        { width: `${Math.round(week.cleanPct * 100)}%` },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.weekTrackThin}>
+                    <View
+                      style={[
+                        styles.weekFillBm,
+                        { width: `${Math.round(week.bmPct * 100)}%` },
+                      ]}
+                    />
+                  </View>
+                  {week.changeNote ? (
+                    <Text style={styles.weekChangeNote}>
+                      {"\u2B06"} {week.changeNote}
+                    </Text>
+                  ) : null}
+                </View>
+              )
+            )}
+          </Card>
+        ) : null}
+
+        {loading ? <ActivityIndicator color={theme.colors.primary} /> : null}
         {status ? <Text style={styles.status}>{status}</Text> : null}
 
         {!loading && activeMetrics.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>Add daily logs to see progress here.</Text>
-          </View>
+          <Card>
+            <EmptyState
+              title="Charts need a few days"
+              body="Log 3 days and trends will start to appear."
+            />
+          </Card>
         ) : null}
 
         {activeMetrics.length > 0 ? (
-          <View style={styles.chartCard}>
+          <Card>
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendSwatch, { backgroundColor: colors.sp }]} />
@@ -663,7 +946,7 @@ export default function ProgressScreen() {
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendSwatch, { backgroundColor: colors.leaks }]} />
-                <Text style={styles.legendLabel}>Leaks</Text>
+                <Text style={styles.legendLabel}>Leaks/Smears</Text>
               </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendSwatch, { backgroundColor: colors.activity }]} />
@@ -740,11 +1023,10 @@ export default function ProgressScreen() {
                 </View>
               </ScrollView>
             </View>
-          </View>
+          </Card>
         ) : null}
 
-        <View style={styles.reportCard}>
-          <Text style={styles.sectionTitle}>Weekly support</Text>
+        <Card title="Weekly support">
           {last7LoggedDays < 7 ? (
             <Text style={styles.reportMeta}>
               Log at least 7 days to unlock weekly support insights.
@@ -752,19 +1034,17 @@ export default function ProgressScreen() {
           ) : (
             <Text style={styles.patternText}>{supportiveMessage}</Text>
           )}
-        </View>
+        </Card>
 
-        <View style={styles.reportCard}>
+        <Card>
           <View style={styles.reportHeaderRow}>
-            <View>
-              <Text style={styles.sectionTitle}>Pediatrician report (last 30 days)</Text>
+            <View style={styles.reportHeaderText}>
+              <CardTitle>Pediatrician report (last 30 days)</CardTitle>
               <Text style={styles.reportMeta}>
                 {reportChildName} · {reportStart} - {reportEnd}
               </Text>
             </View>
-            <TouchableOpacity style={styles.reportButton} onPress={handleExportReport}>
-              <Text style={styles.reportButtonText}>Export report</Text>
-            </TouchableOpacity>
+            <PrimaryButton title="Export report" onPress={handleExportReport} />
           </View>
 
           <View style={styles.summaryGrid}>
@@ -799,17 +1079,21 @@ export default function ProgressScreen() {
           </View>
 
           <View style={styles.reportSection}>
-            <Text style={styles.sectionTitle}>Accidents per week</Text>
-            <BarChart labels={weekLabels} values={accidentsPerWeek} color="#EF4444" />
+            <CardTitle>Accidents per week</CardTitle>
+            <BarChart
+              labels={weekLabels}
+              values={accidentsPerWeek}
+              color={theme.data.chart.accidents}
+            />
           </View>
 
           <View style={styles.reportSection}>
-            <Text style={styles.sectionTitle}>Bowel movements per week</Text>
-            <BarChart labels={weekLabels} values={bmsPerWeek} color="#2563EB" />
+            <CardTitle>Bowel movements per week</CardTitle>
+            <BarChart labels={weekLabels} values={bmsPerWeek} color={theme.data.chart.bm} />
           </View>
 
           <View style={styles.reportSection}>
-            <Text style={styles.sectionTitle}>Stool interval trend</Text>
+            <CardTitle>Stool interval trend</CardTitle>
             <LineChart
               labels={intervalData.map((item) => item.label)}
               values={intervalData.map((item) => item.value)}
@@ -817,242 +1101,316 @@ export default function ProgressScreen() {
           </View>
 
           <View style={styles.reportSection}>
-            <Text style={styles.sectionTitle}>Detected patterns</Text>
+            <CardTitle>Detected patterns</CardTitle>
             {patterns.map((pattern) => (
               <Text key={pattern} style={styles.patternText}>
                 • {pattern}
               </Text>
             ))}
           </View>
-        </View>
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  container: {
-    padding: 20,
-    gap: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  subtitle: {
-    color: "#64748B",
-    fontSize: 14,
-  },
-  status: {
-    color: "#DC2626",
-    fontWeight: "500",
-  },
-  emptyCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-  },
-  emptyText: {
-    color: "#64748B",
-  },
-  chartCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    gap: 12,
-  },
-  legendRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  legendItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  legendSwatch: {
-    width: 14,
-    height: 14,
-    borderRadius: 4,
-  },
-  legendLabel: {
-    color: "#0F172A",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  chartWrapper: {
-    height: chartHeight + 30,
-    position: "relative",
-  },
-  gridLine: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  chartRow: {
-    flexDirection: "row",
-    gap: 10,
-    paddingTop: 6,
-    paddingBottom: 8,
-  },
-  barGroup: {
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 6,
-    justifyContent: "flex-end",
-  },
-  bar: {
-    borderRadius: 6,
-  },
-  barValue: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#0F172A",
-  },
-  barLabelSmall: {
-    fontSize: 10,
-    color: "#64748B",
-  },
-  barColumn: {
-    width: 22,
-    alignItems: "center",
-  },
-  barColumnWide: {
-    width: 92,
-  },
-  barStack: {
-    width: 16,
-    height: chartHeight,
-    justifyContent: "flex-end",
-    borderRadius: 6,
-    overflow: "hidden",
-    backgroundColor: "#F1F5F9",
-  },
-  barStackWide: {
-    width: 28,
-  },
-  barSegment: {
-    width: "100%",
-  },
-  barLabel: {
-    fontSize: 10,
-    color: "#64748B",
-    marginTop: 4,
-    minHeight: 12,
-    textAlign: "center",
-  },
-  countLabel: {
-    fontSize: 10,
-    color: "#94A3B8",
-    marginTop: 2,
-    textAlign: "center",
-  },
-  reportCard: {
-    backgroundColor: "#FFFFFF",
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    gap: 16,
-  },
-  reportHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 12,
-  },
-  reportMeta: {
-    color: "#64748B",
-    fontSize: 12,
-    marginTop: 4,
-  },
-  reportButton: {
-    backgroundColor: "#4C6FFF",
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 12,
-  },
-  reportButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 12,
-  },
-  summaryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  summaryCard: {
-    flexBasis: "48%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 12,
-    gap: 6,
-  },
-  summaryCardFull: {
-    flexBasis: "100%",
-    backgroundColor: "#F8FAFC",
-    borderRadius: 12,
-    padding: 12,
-    gap: 6,
-  },
-  summaryLabel: {
-    color: "#64748B",
-    fontSize: 11,
-  },
-  summaryValue: {
-    color: "#0F172A",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  reportSection: {
-    gap: 8,
-  },
-  patternText: {
-    color: "#1E293B",
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  lineChart: {
-    position: "relative",
-    paddingTop: 10,
-  },
-  lineGrid: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  lineSegment: {
-    position: "absolute",
-    height: 2,
-    backgroundColor: "#4C6FFF",
-  },
-  linePoint: {
-    position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#4C6FFF",
-  },
-  lineLabel: {
-    position: "absolute",
-    fontSize: 10,
-    color: "#64748B",
-    width: 50,
-    textAlign: "center",
-  },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    container: {
+      padding: t.spacing.gutter,
+      gap: t.spacing.cardGap,
+    },
+    status: {
+      ...t.typography.label,
+      color: t.colors.danger,
+    },
+    emptyText: {
+      ...t.typography.body,
+      color: t.colors.textSecondary,
+    },
+    legendRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: t.spacing.md,
+    },
+    legendItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    legendSwatch: {
+      width: 14,
+      height: 14,
+      borderRadius: 4,
+    },
+    legendLabel: {
+      ...t.typography.label,
+      color: t.colors.textPrimary,
+    },
+    chartWrapper: {
+      height: chartHeight + 30,
+      position: "relative",
+    },
+    gridLine: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: 1,
+      backgroundColor: t.colors.border,
+    },
+    chartRow: {
+      flexDirection: "row",
+      gap: 10,
+      paddingTop: 6,
+      paddingBottom: t.spacing.sm,
+    },
+    barGroup: {
+      alignItems: "center",
+      gap: t.spacing.xs,
+      paddingHorizontal: 6,
+      justifyContent: "flex-end",
+    },
+    bar: {
+      borderRadius: 6,
+    },
+    // Chart micro-labels sit below the smallest step of the type scale, so the
+    // size stays literal while the face comes from the font tokens.
+    barValue: {
+      fontFamily: t.fontFamily.sansSemiBold,
+      fontSize: 11,
+      color: t.colors.textPrimary,
+    },
+    barLabelSmall: {
+      fontFamily: t.fontFamily.sans,
+      fontSize: 10,
+      color: t.colors.textSecondary,
+    },
+    barColumn: {
+      width: 22,
+      alignItems: "center",
+    },
+    barColumnWide: {
+      width: 92,
+    },
+    barStack: {
+      width: 16,
+      height: chartHeight,
+      justifyContent: "flex-end",
+      borderRadius: 6,
+      overflow: "hidden",
+      backgroundColor: t.colors.inputFill,
+    },
+    barStackWide: {
+      width: 28,
+    },
+    barSegment: {
+      width: "100%",
+    },
+    barLabel: {
+      fontFamily: t.fontFamily.sans,
+      fontSize: 10,
+      color: t.colors.textSecondary,
+      marginTop: t.spacing.xs,
+      minHeight: 12,
+      textAlign: "center",
+    },
+    countLabel: {
+      fontFamily: t.fontFamily.sans,
+      fontSize: 10,
+      color: t.colors.textMuted,
+      marginTop: 2,
+      textAlign: "center",
+    },
+    reportHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: t.spacing.md,
+    },
+    reportHeaderText: {
+      flexShrink: 1,
+    },
+    reportMeta: {
+      ...t.typography.caption,
+      color: t.colors.textSecondary,
+      marginTop: t.spacing.xs,
+    },
+    summaryGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: t.spacing.md,
+    },
+    summaryCard: {
+      flexBasis: "48%",
+      backgroundColor: t.colors.background,
+      borderRadius: t.radii.input,
+      padding: t.spacing.md,
+      gap: 6,
+    },
+    summaryCardFull: {
+      flexBasis: "100%",
+      backgroundColor: t.colors.background,
+      borderRadius: t.radii.input,
+      padding: t.spacing.md,
+      gap: 6,
+    },
+    summaryLabel: {
+      ...t.typography.caption,
+      color: t.colors.textSecondary,
+    },
+    summaryValue: {
+      fontFamily: t.fontFamily.sansBold,
+      fontSize: 16,
+      color: t.colors.textPrimary,
+    },
+    reportSection: {
+      gap: t.spacing.sm,
+    },
+    patternText: {
+      ...t.typography.body,
+      color: t.colors.textPrimary,
+    },
+    lineChart: {
+      position: "relative",
+      paddingTop: 10,
+    },
+    lineGrid: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      height: 1,
+      backgroundColor: t.colors.border,
+    },
+    lineSegment: {
+      position: "absolute",
+      height: 2,
+      backgroundColor: t.colors.primary,
+    },
+    linePoint: {
+      position: "absolute",
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: t.colors.primary,
+    },
+    lineLabel: {
+      position: "absolute",
+      fontFamily: t.fontFamily.sans,
+      fontSize: 10,
+      color: t.colors.textSecondary,
+      width: 50,
+      textAlign: "center",
+    },
+    streakHeader: {
+      gap: 2,
+    },
+    streakHint: {
+      ...t.typography.caption,
+      color: t.colors.textMuted,
+    },
+    streakRow: {
+      flexDirection: "row",
+      gap: t.spacing.md,
+      alignItems: "stretch",
+    },
+    streakHero: {
+      flex: 1,
+      backgroundColor: t.colors.primaryTint,
+      borderRadius: t.radii.card,
+      padding: t.spacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: t.spacing.xs,
+      minWidth: 130,
+    },
+    streakHeroEmoji: {
+      fontSize: 28,
+    },
+    streakHeroNumber: {
+      fontFamily: t.fontFamily.sansBold,
+      fontSize: 36,
+      lineHeight: 40,
+      color: t.colors.primaryDark,
+    },
+    streakHeroLabel: {
+      ...t.typography.label,
+      color: t.colors.primaryDark,
+      textAlign: "center",
+    },
+    streakSecondary: {
+      flex: 1,
+      gap: t.spacing.sm,
+      justifyContent: "space-between",
+    },
+    streakChip: {
+      backgroundColor: t.colors.background,
+      borderRadius: t.radii.input,
+      paddingVertical: t.spacing.sm,
+      paddingHorizontal: t.spacing.md,
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      gap: t.spacing.sm,
+    },
+    streakChipNumber: {
+      fontFamily: t.fontFamily.sansBold,
+      fontSize: 18,
+      color: t.colors.textPrimary,
+    },
+    streakChipLabel: {
+      ...t.typography.label,
+      color: t.colors.textSecondary,
+      textAlign: "right",
+      flex: 1,
+    },
+    weekRow: {
+      gap: 5,
+    },
+    weekHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "baseline",
+      gap: t.spacing.sm,
+    },
+    weekLabel: {
+      ...t.typography.label,
+      color: t.colors.textPrimary,
+    },
+    weekCounts: {
+      ...t.typography.caption,
+      color: t.colors.textSecondary,
+    },
+    weekTrack: {
+      height: 14,
+      borderRadius: 7,
+      backgroundColor: t.colors.inputFill,
+      overflow: "hidden",
+    },
+    weekFillClean: {
+      height: "100%",
+      borderRadius: 7,
+      backgroundColor: t.data.dayClear,
+    },
+    weekTrackThin: {
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: t.colors.inputFill,
+      overflow: "hidden",
+    },
+    weekFillBm: {
+      height: "100%",
+      borderRadius: 3,
+      backgroundColor: t.data.chart.bm,
+    },
+    weekChangeNote: {
+      ...t.typography.caption,
+      color: t.colors.success,
+      marginTop: 2,
+    },
+  });

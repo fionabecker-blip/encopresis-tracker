@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Platform,
@@ -10,10 +10,14 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import Icon from "../src/components/Icon";
+import { useTheme } from "../src/theme/useTheme";
+import type { Theme } from "../src/theme/tokens";
 
 export default function DisclaimerScreen({ onAccept }) {
   const [checked, setChecked] = useState(false);
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   const handleExit = () => {
     if (Platform.OS === "android") {
@@ -56,10 +60,10 @@ export default function DisclaimerScreen({ onAccept }) {
         </Text>
 
         <Pressable style={styles.checkboxRow} onPress={() => setChecked((prev) => !prev)}>
-          <Ionicons
-            name={checked ? "checkbox" : "square-outline"}
+          <Icon
+            name={checked ? "checkboxOn" : "checkboxOff"}
             size={22}
-            color={checked ? "#4C6FFF" : "#94A3B8"}
+            color={checked ? theme.colors.primary : theme.colors.textMuted}
           />
           <Text style={styles.checkboxText}>
             I understand this app does not provide medical advice.
@@ -82,63 +86,60 @@ export default function DisclaimerScreen({ onAccept }) {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  container: {
-    padding: 20,
-    gap: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  bodyText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1E293B",
-  },
-  checkboxRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 8,
-  },
-  checkboxText: {
-    color: "#1E293B",
-    fontSize: 14,
-    flex: 1,
-  },
-  primaryButton: {
-    backgroundColor: "#4C6FFF",
-    borderRadius: 14,
-    minHeight: 52,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  primaryButtonDisabled: {
-    opacity: 0.5,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderColor: "#CBD5F5",
-    borderRadius: 14,
-    minHeight: 52,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-  },
-  secondaryButtonText: {
-    color: "#1E293B",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    container: {
+      padding: t.spacing.gutter,
+      gap: t.spacing.cardGap,
+    },
+    title: {
+      ...t.typography.screenTitle,
+      color: t.colors.textPrimary,
+    },
+    bodyText: {
+      ...t.typography.body,
+      color: t.colors.textPrimary,
+    },
+    checkboxRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: t.spacing.md,
+      marginTop: t.spacing.sm,
+    },
+    checkboxText: {
+      ...t.typography.body,
+      color: t.colors.textPrimary,
+      flex: 1,
+    },
+    primaryButton: {
+      backgroundColor: t.colors.primary,
+      borderRadius: t.radii.button,
+      minHeight: 52,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    primaryButtonDisabled: {
+      opacity: 0.5,
+    },
+    primaryButtonText: {
+      ...t.typography.button,
+      color: t.colors.onPrimary,
+    },
+    secondaryButton: {
+      borderWidth: 1,
+      borderColor: t.colors.border,
+      borderRadius: t.radii.button,
+      minHeight: 52,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: t.colors.surface,
+    },
+    secondaryButtonText: {
+      ...t.typography.button,
+      color: t.colors.textPrimary,
+    },
+  });

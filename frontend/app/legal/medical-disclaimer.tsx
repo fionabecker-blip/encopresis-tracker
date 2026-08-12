@@ -1,7 +1,13 @@
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useTheme } from "../../src/theme/useTheme";
+import type { Theme } from "../../src/theme/tokens";
 
 export default function MedicalDisclaimerScreen() {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -29,23 +35,22 @@ export default function MedicalDisclaimerScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F8FAFC",
-  },
-  container: {
-    padding: 20,
-    gap: 14,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#0F172A",
-  },
-  body: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#1E293B",
-  },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: t.colors.background,
+    },
+    container: {
+      padding: t.spacing.gutter,
+      gap: t.spacing.lg,
+    },
+    title: {
+      ...t.typography.screenTitle,
+      color: t.colors.textPrimary,
+    },
+    body: {
+      ...t.typography.body,
+      color: t.colors.textPrimary,
+    },
+  });
