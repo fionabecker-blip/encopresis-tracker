@@ -30,6 +30,10 @@ import {
 // A day counts as an "accident" day if it had a fecal accident, a urine
 // accident, or a leak/smear. Clinically these are symptoms of the same
 // problem and none is "better" than another, so they share one color.
+/** Assumed volume of one glass, used to turn the logged glass count into the
+ *  millilitres a clinician expects to read. */
+const ML_PER_GLASS = 250;
+
 const getDayStatus = (entry) => {
   if (!entry) return "none";
   const fecal = entry.fecal_accidents ? entry.fecal_accidents > 0 : false;
@@ -268,6 +272,16 @@ export default function HistoryScreen() {
     return value;
   };
 
+  // Water is logged as a glass count, but clinicians want a volume, so glasses
+  // are converted at 250 ml each. Entries predating the stepper carry their own
+  // oz/ml unit and are passed through untouched rather than mis-converted.
+  const formatWater = (entry: Entry) => {
+    const amount = entry.water_intake;
+    if (amount === null || amount === undefined) return "";
+    if (entry.water_unit === "glasses") return `${amount * ML_PER_GLASS} ml`;
+    return [amount, entry.water_unit].filter(Boolean).join(" ");
+  };
+
   // Build the full list of rows for an entry, marking which are "logged" (worth
   // showing in the collapsed view) vs. blanks (only shown when expanded).
   const buildRows = (entry) => {
@@ -343,9 +357,7 @@ export default function HistoryScreen() {
       {
         key: "water",
         label: "Water",
-        value: waterLogged
-          ? `${entry.water_intake} ${entry.water_unit ?? ""}`
-          : "Not logged",
+        value: waterLogged ? formatWater(entry) : "Not logged",
         logged: waterLogged,
       },
       {
@@ -544,8 +556,11 @@ export default function HistoryScreen() {
       formatMedicationExport(entry.medication),
       formatMedicationDosesExport(entry.medication_doses),
       formatMotilityFoodsExport(entry.motility_foods),
-      entry.water_intake ?? "",
-      entry.water_unit ?? "",
+      // Converted here too, so the CSV and the PDF never disagree on a number.
+      entry.water_unit === "glasses"
+        ? (entry.water_intake ?? 0) * ML_PER_GLASS
+        : entry.water_intake ?? "",
+      entry.water_unit === "glasses" ? "ml" : entry.water_unit ?? "",
       entry.fiber_intake ?? "",
       entry.fiber_unit ?? "",
       entry.clean_out === undefined ? "" : entry.clean_out ? "Yes" : "No",
@@ -768,7 +783,7 @@ export default function HistoryScreen() {
       esc(formatMedicationExport(entry.medication)),
       esc(formatMedicationDosesExport(entry.medication_doses)),
       esc(formatMotilityFoodsExport(entry.motility_foods)),
-      esc([entry.water_intake, entry.water_unit].filter(Boolean).join(" ")),
+      esc(formatWater(entry)),
       esc([entry.fiber_intake, entry.fiber_unit].filter(Boolean).join(" ")),
       yesNo(entry.clean_out),
       esc(entry.clean_out_notes),

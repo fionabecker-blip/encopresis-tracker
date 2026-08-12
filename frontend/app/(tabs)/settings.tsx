@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 import * as Notifications from "expo-notifications";
 import SegmentedControl from "../components/SegmentedControl";
 import Card from "../../src/components/Card";
@@ -27,11 +28,21 @@ import type { Theme } from "../../src/theme/tokens";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    // `shouldShowAlert` is deprecated and split into these two: banner is the
+    // transient drop-down, list is the persisted Notification Centre entry. A
+    // reminder is only useful if it survives being missed, so both are on.
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: false,
     shouldSetBadge: false,
   }),
 });
+
+const CONTACT_EMAIL = "theencopresistracker@gmail.com";
+
+const openContactEmail = () => {
+  Linking.openURL(`mailto:${CONTACT_EMAIL}`);
+};
 
 const yesNoOptions = [
   { label: "On", value: "yes" },
@@ -107,7 +118,13 @@ export default function SettingsScreen() {
     const [hourValue, minuteValue] = time.split(":");
     return Notifications.scheduleNotificationAsync({
       content: { title, body },
-      trigger: { hour: Number(hourValue), minute: Number(minuteValue), repeats: true },
+      // DAILY repeats by definition, so the old `repeats: true` is dropped
+      // rather than carried over — the typed input has no such field.
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        hour: Number(hourValue),
+        minute: Number(minuteValue),
+      },
     });
   };
 
@@ -464,12 +481,21 @@ export default function SettingsScreen() {
             <Text style={styles.bodyText}>
               Entries are stored on this device only and are not sent to any server.
             </Text>
-            <Text style={styles.bodyText}>Contact: seafaress@protonmail.com</Text>
+            <Text style={styles.bodyText}>
+              Contact:{" "}
+              <Text style={styles.emailLink} onPress={openContactEmail}>
+                {CONTACT_EMAIL}
+              </Text>
+            </Text>
           </Card>
 
           <PrimaryButton title="Save settings" onPress={handleSave} loading={saving} />
 
           {status ? <Text style={styles.status}>{status}</Text> : null}
+
+          <Text style={styles.copyright}>
+            © 2026 Enco Tracker. Made by a mom who gets it
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -524,6 +550,15 @@ const makeStyles = (t: Theme) =>
       ...t.typography.label,
       textAlign: "center",
       color: t.colors.textPrimary,
+    },
+    emailLink: {
+      color: t.colors.primary,
+      textDecorationLine: "underline",
+    },
+    copyright: {
+      ...t.typography.caption,
+      textAlign: "center",
+      color: t.colors.textMuted,
     },
     reminderRow: {
       gap: t.spacing.sm,

@@ -183,6 +183,12 @@ const formatToastDate = (value: string): string => {
 
 // Only these streaks are called out. Consistency is the thing being praised —
 // never the child's symptoms — so the copy is about notes, not outcomes.
+const WATER_MIN = 0;
+const WATER_MAX = 12;
+/** Unit tag written alongside the glass count. Reports key off this to decide
+ *  whether to convert to ml, so older oz/ml entries still render as logged. */
+const WATER_UNIT_GLASSES = "glasses";
+
 const STREAK_MILESTONES = [3, 7, 14];
 
 /** Consecutive logged days ending at `endDate`. */
@@ -215,8 +221,7 @@ export default function LogScreen() {
   const [bmType, setBmType] = useState("none");
   const [bmNotes, setBmNotes] = useState("");
   const [bristolType, setBristolType] = useState<number | null>(null);
-  const [waterIntake, setWaterIntake] = useState("");
-  const [waterUnitOverride, setWaterUnitOverride] = useState<string | null>(null);
+  const [waterGlasses, setWaterGlasses] = useState(0);
   const [fiberIntake, setFiberIntake] = useState("");
   const [cleanOut, setCleanOut] = useState("no");
   const [cleanOutNotes, setCleanOutNotes] = useState("");
@@ -254,7 +259,6 @@ export default function LogScreen() {
     { label: "None/Not taken", value: "None/Not taken" },
   ];
 
-  const effectiveWaterUnit = waterUnitOverride ?? settings.waterUnit;
 
   // Explainers render in the app's own modal rather than Alert.alert so they
   // pick up the design system instead of the OS dialog style.
@@ -292,8 +296,7 @@ export default function LogScreen() {
     setBmType("none");
     setBmNotes("");
     setBristolType(null);
-    setWaterIntake("");
-    setWaterUnitOverride(null);
+    setWaterGlasses(0);
     setFiberIntake("");
     setCleanOut("no");
     setCleanOutNotes("");
@@ -347,7 +350,6 @@ export default function LogScreen() {
 
       const fecal = parseNumber(fecalAccidents);
       const urine = parseNumber(urineAccidents);
-      const water = parseNumber(waterIntake);
       const fiber = parseNumber(fiberIntake);
 
       if (fecal !== undefined) entry.fecal_accidents = fecal;
@@ -383,9 +385,12 @@ export default function LogScreen() {
         const consistency = mapBristolToConsistency(bristolType);
         if (consistency) entry.poop_consistency = consistency;
       }
-      if (water !== undefined) {
-        entry.water_intake = water;
-        entry.water_unit = effectiveWaterUnit;
+      // Stored as a glass count with an explicit unit, not pre-converted to ml.
+      // The unit tag is what lets the report tell these apart from older entries
+      // logged in oz/ml, which must keep rendering in the unit they were entered.
+      if (waterGlasses > 0) {
+        entry.water_intake = waterGlasses;
+        entry.water_unit = WATER_UNIT_GLASSES;
       }
       if (fiber !== undefined) {
         entry.fiber_intake = fiber;
@@ -685,36 +690,39 @@ export default function LogScreen() {
           <Card title="Hydration and diet">
             <View style={styles.row}>
               <View style={styles.column}>
-                <TextField
-                  label={`Water (${effectiveWaterUnit})`}
-                  labelAccessory={
-                    <View style={styles.unitToggleRow}>
-                      {["oz", "ml"].map((unit) => {
-                        const isActive = effectiveWaterUnit === unit;
-                        return (
-                          <TouchableOpacity
-                            key={unit}
-                            onPress={() => setWaterUnitOverride(unit)}
-                            style={[styles.unitChip, isActive && styles.unitChipActive]}
-                          >
-                            <Text
-                              style={[
-                                styles.unitChipText,
-                                isActive && styles.unitChipTextActive,
-                              ]}
-                            >
-                              {unit}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  }
-                  value={waterIntake}
-                  onChangeText={setWaterIntake}
-                  placeholder="Optional"
-                  keyboardType="numeric"
-                />
+                <Text style={styles.label}>Glasses of water today</Text>
+                <View style={styles.stepperRow}>
+                  <TouchableOpacity
+                    onPress={() => setWaterGlasses((n) => Math.max(WATER_MIN, n - 1))}
+                    disabled={waterGlasses <= WATER_MIN}
+                    accessibilityRole="button"
+                    accessibilityLabel="One glass fewer"
+                    style={[
+                      styles.stepperButton,
+                      waterGlasses <= WATER_MIN && styles.stepperButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.stepperGlyph}>−</Text>
+                  </TouchableOpacity>
+                  <Text
+                    style={styles.stepperValue}
+                    accessibilityLabel={`${waterGlasses} glasses of water`}
+                  >
+                    {waterGlasses}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setWaterGlasses((n) => Math.min(WATER_MAX, n + 1))}
+                    disabled={waterGlasses >= WATER_MAX}
+                    accessibilityRole="button"
+                    accessibilityLabel="One glass more"
+                    style={[
+                      styles.stepperButton,
+                      waterGlasses >= WATER_MAX && styles.stepperButtonDisabled,
+                    ]}
+                  >
+                    <Text style={styles.stepperGlyph}>+</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
               <View style={styles.column}>
                 <TextField
@@ -1094,28 +1102,35 @@ const makeStyles = (t: Theme) =>
       fontFamily: t.fontFamily.sansMedium,
       color: t.colors.textPrimary,
     },
-    unitToggleRow: {
+    stepperRow: {
       flexDirection: "row",
-      gap: t.spacing.xs,
+      alignItems: "center",
+      gap: t.spacing.sm,
+      marginTop: t.spacing.xs,
     },
-    unitChip: {
-      borderWidth: 1,
-      borderColor: t.colors.border,
+    stepperButton: {
+      width: 44,
+      height: 44,
       borderRadius: t.radii.chip,
-      paddingHorizontal: t.spacing.sm,
-      paddingVertical: t.spacing.xs,
+      borderWidth: t.sizing.chipBorderWidth,
+      borderColor: t.colors.border,
       backgroundColor: t.colors.inputFill,
+      alignItems: "center",
+      justifyContent: "center",
     },
-    unitChipActive: {
-      backgroundColor: t.colors.primary,
-      borderColor: t.colors.primary,
+    stepperButtonDisabled: {
+      opacity: 0.4,
     },
-    unitChipText: {
-      ...t.typography.label,
-      color: t.colors.textSecondary,
+    stepperGlyph: {
+      ...t.typography.sectionTitle,
+      color: t.colors.primary,
     },
-    unitChipTextActive: {
-      color: t.colors.onPrimary,
+    stepperValue: {
+      ...t.typography.sectionTitle,
+      color: t.colors.textPrimary,
+      minWidth: 32,
+      textAlign: "center",
+      fontVariant: ["tabular-nums"],
     },
     dietChip: {
       flexDirection: "row",

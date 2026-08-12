@@ -1,24 +1,29 @@
 {
   "expo": {
-    "name": "THE ENCOPRESIS TRACKER",
+    "name": "Enco Tracker",
     "slug": "the-encopresis-tracker",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "frontend",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.seafaress.theencopresistracker",
       "supportsTablet": true,
       "infoPlist": {
-        "NSUserNotificationUsageDescription": "Reminders for daily logs"
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "permissions": ["POST_NOTIFICATIONS"],
+      "package": "com.seafaress.theencopresistracker",
+      "allowBackup": false,
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#000"
+        "backgroundColor": "#FAF6EF"
       },
       "edgeToEdgeEnabled": true
     },
@@ -29,18 +34,25 @@
     },
     "plugins": [
       "expo-router",
+      "@react-native-community/datetimepicker",
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "backgroundColor": "#FAF6EF"
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "6837ea11-8f17-4556-bff2-f73335801bb3"
+      }
     }
   }
 }
