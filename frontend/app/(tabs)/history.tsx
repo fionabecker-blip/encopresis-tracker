@@ -27,19 +27,21 @@ import {
   renderReportDocument,
 } from "../../src/report/reportTemplate";
 
-// A day counts as an "accident" day if it had a fecal accident, a urine
-// accident, or a leak/smear. Clinically these are symptoms of the same
-// problem and none is "better" than another, so they share one color.
+// A day counts as an "accident" day if it had any fecal/urine accident or
+// leak/smear. Clinically these are symptoms of the same underlying problem
+// (rectal distension) so they share one color.
 /** Assumed volume of one glass, used to turn the logged glass count into the
  *  millilitres a clinician expects to read. */
 const ML_PER_GLASS = 250;
 
 const getDayStatus = (entry) => {
   if (!entry) return "none";
-  const fecal = entry.fecal_accidents ? entry.fecal_accidents > 0 : false;
-  const urine = entry.urine_accidents ? entry.urine_accidents > 0 : false;
-  const leaks = entry.leaks === true;
-  return fecal || urine || leaks ? "accident" : "clear";
+  const total =
+    (entry.fecal_accidents || 0) +
+    (entry.fecal_leaks || 0) +
+    (entry.urine_accidents || 0) +
+    (entry.urine_leaks || 0);
+  return total > 0 ? "accident" : "clear";
 };
 
 // Escape user-entered text before interpolating it into export HTML, so
@@ -147,16 +149,8 @@ export default function HistoryScreen() {
   // mean the parent didn't tap Yes.
   const formatBoolean = (value) => (value === true ? "Yes" : "No");
 
-  const smearTypeLabels: Record<string, string> = {
-    urine: "urine leak",
-    fecal: "fecal smear",
-    both: "urine leak + fecal smear",
-  };
-  const formatSmears = (entry) => {
-    if (entry.leaks !== true) return "No";
-    const type = smearTypeLabels[entry.leak_type];
-    return type ? `Yes (${type})` : "Yes";
-  };
+  const formatLeakCount = (value: number | undefined) =>
+    value == null ? "Not logged" : String(value);
 
   const normalizeMedicationLabel = (value) => {
     if (!value) return "";
@@ -236,6 +230,23 @@ export default function HistoryScreen() {
     return value;
   };
 
+  /**
+   * Stored `bm_type` codes are terse and were being shown to parents and
+   * clinicians verbatim — the detail row, the PDF, and the CSV all printed
+   * "enema" and "sp". The codes stay as-is so existing entries keep working;
+   * only what gets displayed changes.
+   */
+  const bmTypeLabels: Record<string, string> = {
+    sp: "Spontaneous",
+    enema: "Suppository-induced BM",
+    none: "No BM",
+  };
+
+  const formatBmType = (value?: string | null) => {
+    if (!value) return "Not logged";
+    return bmTypeLabels[value] ?? value;
+  };
+
   const bristolLabels = {
     1: "Separate hard lumps",
     2: "Sausage-shaped and lumpy",
@@ -295,27 +306,33 @@ export default function HistoryScreen() {
 
     return [
       {
-        key: "fecal",
+        key: "fecal_accidents",
         label: "Fecal accidents",
         value: formatNumber(entry.fecal_accidents),
         logged: numLogged(entry.fecal_accidents),
       },
       {
-        key: "urine",
+        key: "fecal_leaks",
+        label: "Fecal leaks / smears",
+        value: formatLeakCount(entry.fecal_leaks),
+        logged: numLogged(entry.fecal_leaks),
+      },
+      {
+        key: "urine_accidents",
         label: "Urine accidents",
         value: formatNumber(entry.urine_accidents),
         logged: numLogged(entry.urine_accidents),
       },
       {
-        key: "leaks",
-        label: "Leaks/Smears",
-        value: formatSmears(entry),
-        logged: entry.leaks === true,
+        key: "urine_leaks",
+        label: "Urine leaks",
+        value: formatLeakCount(entry.urine_leaks),
+        logged: numLogged(entry.urine_leaks),
       },
       {
         key: "bm_type",
         label: "BM type",
-        value: formatText(entry.bm_type),
+        value: formatBmType(entry.bm_type),
         logged: strLogged(entry.bm_type) && entry.bm_type !== "none",
       },
       {
@@ -519,9 +536,10 @@ export default function HistoryScreen() {
     const header = [
       "Date",
       "Fecal accidents",
+      "Fecal leaks",
       "Urine accidents",
-      "Leaks/Smears",
-      "Leak/Smear type",
+      "Urine leaks",
+      "Total accidents",
       "BM type",
       "BM notes",
       "Poop consistency",
@@ -546,10 +564,11 @@ export default function HistoryScreen() {
     const rows = entries.map((entry) => [
       entry.date,
       entry.fecal_accidents ?? "",
+      entry.fecal_leaks ?? "",
       entry.urine_accidents ?? "",
-      entry.leaks === undefined ? "" : entry.leaks ? "Yes" : "No",
-      entry.leaks === true ? (smearTypeLabels[entry.leak_type] ?? "") : "",
-      entry.bm_type ?? "",
+      entry.urine_leaks ?? "",
+      (entry.fecal_accidents || 0) + (entry.fecal_leaks || 0) + (entry.urine_accidents || 0) + (entry.urine_leaks || 0),
+      entry.bm_type ? (bmTypeLabels[entry.bm_type] ?? entry.bm_type) : "",
       entry.bm_notes ?? "",
       formatPoopConsistency(entry.poop_consistency),
       formatBristolTypeExport(entry.bristol_type),
@@ -628,15 +647,23 @@ export default function HistoryScreen() {
     const lastDate = sortedDates[sortedDates.length - 1] || "\u2014";
 
     const totalEntries = entries.length;
-    const totalFecal = entries.reduce(
+    const totalFecalAccidents = entries.reduce(
       (sum, e) => sum + (Number(e.fecal_accidents) || 0),
       0
     );
-    const totalUrine = entries.reduce(
+    const totalFecalLeaks = entries.reduce(
+      (sum, e) => sum + (Number(e.fecal_leaks) || 0),
+      0
+    );
+    const totalUrineAccidents = entries.reduce(
       (sum, e) => sum + (Number(e.urine_accidents) || 0),
       0
     );
-    const totalLeaks = entries.filter((e) => e.leaks === true).length;
+    const totalUrineLeaks = entries.reduce(
+      (sum, e) => sum + (Number(e.urine_leaks) || 0),
+      0
+    );
+    const totalAllAccidents = totalFecalAccidents + totalFecalLeaks + totalUrineAccidents + totalUrineLeaks;
     const totalBms = entries.filter(
       (e) => e.bm_type === "sp" || e.bm_type === "enema"
     ).length;
@@ -655,9 +682,11 @@ export default function HistoryScreen() {
       firstDate,
       lastDate,
       totalEntries,
-      totalFecal,
-      totalUrine,
-      totalLeaks,
+      totalFecalAccidents,
+      totalFecalLeaks,
+      totalUrineAccidents,
+      totalUrineLeaks,
+      totalAllAccidents,
       totalBms,
       totalCleanOuts,
       totalTimedSitsDays,
@@ -720,10 +749,12 @@ export default function HistoryScreen() {
       <h2>Summary</h2>
       <table>
         <tbody>
-          ${summaryRow("Bowel movements (spontaneous + suppository/enema)", String(summary.totalBms))}
-          ${summaryRow("Fecal accidents", String(summary.totalFecal))}
-          ${summaryRow("Urine accidents", String(summary.totalUrine))}
-          ${summaryRow("Days with leaks/smears", String(summary.totalLeaks))}
+          ${summaryRow("Bowel movements (spontaneous + suppository-induced)", String(summary.totalBms))}
+          ${summaryRow("Total accidents / leaks", String(summary.totalAllAccidents))}
+          ${summaryRow("Fecal accidents", String(summary.totalFecalAccidents))}
+          ${summaryRow("Fecal leaks / smears", String(summary.totalFecalLeaks))}
+          ${summaryRow("Urine accidents", String(summary.totalUrineAccidents))}
+          ${summaryRow("Urine leaks", String(summary.totalUrineLeaks))}
           ${summaryRow("Clean-out days", String(summary.totalCleanOuts))}
           ${summaryRow("Timed sits days", String(summary.totalTimedSitsDays))}
           ${summaryRow("Abdominal pain days", String(summary.totalAbdominalPainDays))}
@@ -741,10 +772,10 @@ export default function HistoryScreen() {
       nowrap?: boolean;
     }[] = [
       { label: "Date", width: "6.4%", nowrap: true },
-      { label: "Fecal", width: "3.6%", numeric: true },
-      { label: "Urine", width: "3.6%", numeric: true },
-      { label: "Leaks", width: "3.8%" },
-      { label: "Leak type", width: "4.4%" },
+      { label: "Fecal acc.", width: "3.6%", numeric: true },
+      { label: "Fecal lk.", width: "3.6%", numeric: true },
+      { label: "Urine acc.", width: "3.6%", numeric: true },
+      { label: "Urine lk.", width: "3.6%", numeric: true },
       { label: "BM type", width: "4.4%" },
       { label: "BM notes", width: "5.1%" },
       { label: "Stool form", width: "4.3%" },
@@ -771,12 +802,10 @@ export default function HistoryScreen() {
     const cells = (entry: Entry): string[] => [
       esc(entry.date),
       entry.fecal_accidents == null ? "" : String(entry.fecal_accidents),
+      entry.fecal_leaks == null ? "" : String(entry.fecal_leaks),
       entry.urine_accidents == null ? "" : String(entry.urine_accidents),
-      yesNo(entry.leaks),
-      entry.leaks === true && entry.leak_type
-        ? esc(smearTypeLabels[entry.leak_type] ?? "")
-        : "",
-      esc(entry.bm_type),
+      entry.urine_leaks == null ? "" : String(entry.urine_leaks),
+      esc(entry.bm_type ? (bmTypeLabels[entry.bm_type] ?? entry.bm_type) : ""),
       esc(entry.bm_notes),
       esc(formatPoopConsistency(entry.poop_consistency)),
       esc(formatBristolTypeExport(entry.bristol_type)),

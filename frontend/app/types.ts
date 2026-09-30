@@ -2,9 +2,9 @@ export const entryFields = [
   "id",
   "date",
   "fecal_accidents",
+  "fecal_leaks",
   "urine_accidents",
-  "leaks",
-  "leak_type",
+  "urine_leaks",
   "medication",
   "medication_doses",
   "bm_type",
@@ -33,9 +33,9 @@ export interface Entry {
   id: string;
   date: string;
   fecal_accidents?: number;
+  fecal_leaks?: number;
   urine_accidents?: number;
-  leaks?: boolean;
-  leak_type?: "urine" | "fecal" | "both";
+  urine_leaks?: number;
   medication?: string[];
   medication_doses?: Record<string, string>;
   bm_type?: string;

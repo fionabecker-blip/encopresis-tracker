@@ -103,7 +103,10 @@ const makeStyles = (t: Theme) =>
       backgroundColor: t.colors.segmentTrack,
       borderRadius: t.radii.segmentTrack,
       padding: t.sizing.segmentPad,
-      height: t.sizing.segmentHeight,
+      // `minHeight`, not `height`: a label long enough to wrap (e.g.
+      // "Suppository-induced BM") would otherwise be clipped by the track. The
+      // thumb is pinned to the track's top and bottom, so it grows to match.
+      minHeight: t.sizing.segmentHeight,
     },
     thumb: {
       position: "absolute",
@@ -123,6 +126,9 @@ const makeStyles = (t: Theme) =>
     label: {
       ...t.typography.segmentLabel,
       color: t.colors.segmentText,
+      // Wrapped labels are full-width Text blocks, so without this the second
+      // line hangs left instead of staying centred under the first.
+      textAlign: "center",
     },
     labelActive: {
       color: t.colors.onPrimary,

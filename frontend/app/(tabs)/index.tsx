@@ -35,7 +35,7 @@ import type { Theme } from "../../src/theme/tokens";
 // with existing stored entries.
 const bmOptions = [
   { label: "Spontaneous", value: "sp" },
-  { label: "Suppository/Enema", value: "enema" },
+  { label: "Suppository-induced BM", value: "enema" },
   { label: "No BM", value: "none" },
 ];
 
@@ -53,12 +53,6 @@ const activityOptions: { label: string; value: string; demo?: ExerciseKey }[] = 
   { label: "Bear hold", value: "Bear hold", demo: "bear_hold" },
   { label: "Crab walk", value: "Crab walk", demo: "crab_walk" },
   { label: "Froggy jumps", value: "Froggy jumps", demo: "froggy_jumps" },
-];
-
-const smearTypeOptions = [
-  { label: "Urine leak", value: "urine" },
-  { label: "Fecal smear", value: "fecal" },
-  { label: "Both", value: "both" },
 ];
 
 const baseMedsOptions = [
@@ -142,10 +136,10 @@ const GLOSSARY = {
     "Timed sits are scheduled toilet sits (usually 5\u201310 min) about 20 minutes after meals, taking advantage of the gastrocolic reflex.",
   cleanOut:
     "A clean out is a higher-dose laxative protocol used to clear out stool buildup. Follow your clinician\u2019s instructions.",
-  leaks:
-    "A leak is urine escaping without the child noticing. A smear is a small amount of stool (also called seepage). Both often signal stool buildup pressing on the bladder and bowel.",
+  accidentsLeaks:
+    "Any stool or urine that escapes without the child\u2019s control \u2014 whether a full accident or a small smear/leak \u2014 signals that the rectum is still enlarged. There is no clinical difference between a \u2018leak\u2019 and an \u2018accident.\u2019 Both mean the same thing: more clean-out is needed. Track every occurrence. Your clinic\u2019s protocol may differ.",
   spontaneous:
-    "A spontaneous BM means your child went on their own \u2014 they felt the urge and pooped without needing an enema or suppository. This is the goal!",
+    "A spontaneous BM means your child went on their own \u2014 they felt the urge and pooped without needing a suppository. This is the goal!",
   properSitting:
     "Proper sitting position means knees above the pelvis, with feet supported \u2014 use a footstool, a yoga block, or both. This relaxes the pelvic floor and makes it much easier to fully empty.",
   insolubleFiber:
@@ -210,9 +204,9 @@ export default function LogScreen() {
   );
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [fecalAccidents, setFecalAccidents] = useState("");
+  const [fecalLeaks, setFecalLeaks] = useState("");
   const [urineAccidents, setUrineAccidents] = useState("");
-  const [leaks, setLeaks] = useState("no");
-  const [smearType, setSmearType] = useState("fecal");
+  const [urineLeaks, setUrineLeaks] = useState("");
   const [medsProtocol, setMedsProtocol] = useState<string[]>([]);
   const [medicationDoses, setMedicationDoses] = useState<Record<string, string>>({});
   const [otherMed, setOtherMed] = useState("");
@@ -285,9 +279,9 @@ export default function LogScreen() {
 
   const resetForm = () => {
     setFecalAccidents("");
+    setFecalLeaks("");
     setUrineAccidents("");
-    setLeaks("no");
-    setSmearType("fecal");
+    setUrineLeaks("");
     setMedsProtocol([]);
     setMedicationDoses({});
     setOtherMed("");
@@ -337,7 +331,6 @@ export default function LogScreen() {
         id: generateId(),
         date: dateValue,
         bm_type: bmType,
-        leaks: leaks === "yes",
         activity_30_min: activity30Min === "yes",
         clean_out: cleanOut === "yes",
         timed_sits_completed: timedSits === "yes",
@@ -349,12 +342,15 @@ export default function LogScreen() {
       };
 
       const fecal = parseNumber(fecalAccidents);
+      const fecalLk = parseNumber(fecalLeaks);
       const urine = parseNumber(urineAccidents);
+      const urineLk = parseNumber(urineLeaks);
       const fiber = parseNumber(fiberIntake);
 
       if (fecal !== undefined) entry.fecal_accidents = fecal;
+      if (fecalLk !== undefined) entry.fecal_leaks = fecalLk;
       if (urine !== undefined) entry.urine_accidents = urine;
-      if (leaks === "yes") entry.leak_type = smearType;
+      if (urineLk !== undefined) entry.urine_leaks = urineLk;
       if (activityTypes.length) entry.activity_types = activityTypes;
 
       // Resolve the meds list: replace "__other__" sentinel with the free-text value if provided.
@@ -448,7 +444,17 @@ export default function LogScreen() {
             ) : null}
           </Card>
 
-          <Card title="Accidents">
+          <Card
+            title="Accidents / Leaks"
+            titleAccessory={
+              <TouchableOpacity
+                hitSlop={8}
+                onPress={() => showTooltip("Accidents & leaks", GLOSSARY.accidentsLeaks)}
+              >
+                <InfoIcon />
+              </TouchableOpacity>
+            }
+          >
             <View style={styles.row}>
               <View style={styles.column}>
                 <TextField
@@ -461,6 +467,17 @@ export default function LogScreen() {
               </View>
               <View style={styles.column}>
                 <TextField
+                  label="Fecal leaks / smears"
+                  value={fecalLeaks}
+                  onChangeText={setFecalLeaks}
+                  placeholder="0"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={styles.column}>
+                <TextField
                   label="Urine accidents"
                   value={urineAccidents}
                   onChangeText={setUrineAccidents}
@@ -468,33 +485,19 @@ export default function LogScreen() {
                   keyboardType="numeric"
                 />
               </View>
-            </View>
-            <View style={styles.stack}>
-              <View style={styles.labelRow}>
-                <Text style={styles.label}>Leaks/Smears</Text>
-                <TouchableOpacity
-                  hitSlop={8}
-                  onPress={() => showTooltip("Leaks and smears", GLOSSARY.leaks)}
-                >
-                  <InfoIcon />
-                </TouchableOpacity>
+              <View style={styles.column}>
+                <TextField
+                  label="Urine leaks"
+                  value={urineLeaks}
+                  onChangeText={setUrineLeaks}
+                  placeholder="0"
+                  keyboardType="numeric"
+                />
               </View>
-              <SegmentedControl
-                options={yesNoOptions}
-                value={leaks}
-                onChange={setLeaks}
-              />
-              {leaks === "yes" ? (
-                <View style={styles.stack}>
-                  <Text style={styles.label}>Type</Text>
-                  <SegmentedControl
-                    options={smearTypeOptions}
-                    value={smearType}
-                    onChange={setSmearType}
-                  />
-                </View>
-              ) : null}
             </View>
+            <Text style={[styles.label, { fontSize: 11, opacity: 0.7, marginTop: 4 }]}>
+              Leaks and smears signal the same rectal distension as full accidents. Track all of them — a smear IS an accident.
+            </Text>
           </Card>
 
           <Card
@@ -515,7 +518,7 @@ export default function LogScreen() {
                   label="BM notes (optional)"
                   value={bmNotes}
                   onChangeText={setBmNotes}
-                  placeholder="Any details about SP/enema"
+                  placeholder="Any details about this BM"
                 />
                 <View style={styles.labelRow}>
                   <Text style={styles.label}>Bristol Stool Type (optional)</Text>

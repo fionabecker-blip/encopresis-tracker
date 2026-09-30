@@ -11,12 +11,12 @@ const howToSteps = [
   {
     title: "1. Log once a day",
     body:
-      "Open the Daily Log tab, pick the date, and fill in what you know \u2014 accidents, leaks/smears, BMs, meds, foods, sits. Nothing is required; log what you have and tap Save. An evening routine (after bath, before bed) works well, and you can turn on a daily reminder in Settings.",
+      "Open the Daily Log tab, pick the date, and fill in what you know \u2014 accidents, leaks, BMs, meds, foods, sits. Nothing is required; log what you have and tap Save. An evening routine (after bath, before bed) works well, and you can turn on a daily reminder in Settings.",
   },
   {
     title: "2. Answer the yes/no questions",
     body:
-      "The yes/no toggles (leaks/smears, clean out, timed sits, sitting position, activity, pain, withholding) default to No \u2014 just tap Yes when something happened. Tap any \u24D8 icon to see what a term means.",
+      "The Accidents / Leaks card has four numeric fields (fecal accidents, fecal leaks, urine accidents, urine leaks) \u2014 enter counts for each. The other yes/no toggles (clean out, timed sits, sitting position, activity, pain, withholding) default to No \u2014 just tap Yes when something happened. Tap any \u24D8 icon to see what a term means.",
   },
   {
     title: "3. Make the app yours in Settings",
@@ -53,17 +53,6 @@ const resources = [
   },
 ];
 
-// Kept out of `resources` because this one is introduced by a note that only
-// makes sense directly above it.
-const fiberNote =
-  "A note on fiber: One of the first things parents try is adding more fiber. It makes sense \u2014 but in encopresis, it can make things worse. If there\u2019s already a blockage, adding fiber adds to it. The colon needs to be cleared first. The article below explains why.";
-
-const fiberResource = {
-  title: "Why \u201cjust add fiber\u201d can backfire in encopresis (NLM)",
-  description:
-    "Clinical review of fiber\u2019s role in childhood GI disorders \u2014 and why disimpaction must come first.",
-  url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6267171/",
-};
 
 export default function ResourcesScreen() {
   const [showHowTo, setShowHowTo] = useState(false);
@@ -122,13 +111,6 @@ export default function ResourcesScreen() {
             </TouchableOpacity>
           ))}
 
-          <Text style={styles.note}>{fiberNote}</Text>
-          <TouchableOpacity onPress={() => openLink(fiberResource.url)}>
-            <Card title={fiberResource.title}>
-              <Text style={styles.cardDescription}>{fiberResource.description}</Text>
-              <Text style={styles.cardLink}>{fiberResource.url}</Text>
-            </Card>
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -152,13 +134,7 @@ const makeStyles = (t: Theme) =>
     list: {
       gap: t.spacing.md,
     },
-    /** Framing copy that introduces the link directly beneath it. */
-    note: {
-      ...t.typography.caption,
-      color: t.colors.textSecondary,
-      marginTop: t.spacing.sm,
-    },
-    cardDescription: {
+cardDescription: {
       ...t.typography.body,
       color: t.colors.textSecondary,
     },

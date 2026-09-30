@@ -134,6 +134,18 @@ const BearHoldScene = () => {
 };
 
 // ---------------------------------------------------------------- Crab walk
+// The shape that makes a crab walk recognisable is the bent knee: thighs carry
+// on the line of the tabletop torso, then the shins drop straight to flat feet,
+// while the arms post straight down under the shoulders. Four identical sticks
+// hanging off a horizontal body reads as an insect, not a child, so arms and
+// legs are built differently on purpose.
+//
+// Pivot points, in canvas coordinates. Limbs are grouped and rotated about the
+// joint that actually moves so they stay welded to the torso; rotating a limb
+// about its own centre (the default) swings its top end away from the body.
+const CRAB_HIP = [96, 112, 0];
+const CRAB_SHOULDER = [166, 112, 0];
+
 const CrabWalkScene = () => {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
@@ -145,13 +157,14 @@ const CrabWalkScene = () => {
       Animated.sequence([
         Animated.timing(travel, {
           toValue: 1,
-          duration: 3000,
-          easing: Easing.linear,
+          duration: 2600,
+          easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(travel, {
           toValue: 0,
-          duration: 0,
+          duration: 2600,
+          easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
       ])
@@ -160,13 +173,13 @@ const CrabWalkScene = () => {
       Animated.sequence([
         Animated.timing(step, {
           toValue: 1,
-          duration: 380,
+          duration: 420,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(step, {
           toValue: 0,
-          duration: 380,
+          duration: 420,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
@@ -180,35 +193,83 @@ const CrabWalkScene = () => {
     };
   }, [travel, step]);
 
-  const translateX = travel.interpolate({ inputRange: [0, 1], outputRange: [-55, 55] });
-  const bodyBob = step.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });
-  const swingA = step.interpolate({ inputRange: [0, 1], outputRange: ["-14deg", "14deg"] });
-  const swingB = step.interpolate({ inputRange: [0, 1], outputRange: ["14deg", "-14deg"] });
+  // Travels out and back instead of looping one way. The previous version reset
+  // from +55 to -55 in a zero-duration frame, so the figure appeared to teleport
+  // across the stage; walking back is also what the third cue asks for.
+  const translateX = travel.interpolate({ inputRange: [0, 1], outputRange: [-28, 28] });
+  const bodyBob = step.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, -3, 0] });
+  // Diagonal gait: near arm moves with far leg, far arm with near leg. That is
+  // how a real four-point crawl stays balanced, and it breaks up the marching
+  // left-right-left-right that made the old figure look like it was scuttling.
+  const swingA = step.interpolate({ inputRange: [0, 1], outputRange: ["-9deg", "9deg"] });
+  const swingB = step.interpolate({ inputRange: [0, 1], outputRange: ["9deg", "-9deg"] });
+
+  // A whole leg: thigh out from the hip, shin down to the floor, foot flat.
+  // `far` shifts it inboard and drops it a tier in colour so the two read as
+  // near and far rather than as one thick limb.
+  const Leg = ({ far }: { far: boolean }) => {
+    const dx = far ? 12 : 0;
+    const limb = far ? styles.limbFar : styles.body;
+    return (
+      <>
+        {/* shin first so the thigh's rounded end covers the knee joint */}
+        <View style={[limb, { left: 62 + dx, top: 112, width: 12, height: 40, borderRadius: 6 }]} />
+        <View style={[styles.extremity, { left: 50 + dx, top: 149, width: 24, height: 13, borderRadius: 6 }]} />
+        <View style={[limb, { left: 64 + dx, top: 102, width: 40, height: 14, borderRadius: 7 }]} />
+      </>
+    );
+  };
+
+  // An arm: straight down from the shoulder to a flat hand, no bend. This is
+  // what the child is propped on.
+  const Arm = ({ far }: { far: boolean }) => {
+    const dx = far ? -13 : 0;
+    const limb = far ? styles.limbFar : styles.body;
+    return (
+      <>
+        <View style={[limb, { left: 162 + dx, top: 108, width: 12, height: 46, borderRadius: 6 }]} />
+        <View style={[styles.extremity, { left: 156 + dx, top: 149, width: 23, height: 13, borderRadius: 6 }]} />
+      </>
+    );
+  };
 
   return (
     <View style={styles.canvas}>
-      {/* Stage floor, painted first so the figure stands on it. */}
-      <View style={styles.groundShadow} />
+      {/* Stage floor. The shadow tracks the figure horizontally but not its bob,
+          so it stays glued to the ground rather than floating with the hips. */}
+      <Animated.View style={[styles.groundShadow, { transform: [{ translateX }] }]} />
       <View style={styles.ground} />
       <Animated.View style={{ transform: [{ translateX }, { translateY: bodyBob }] }}>
-        {/* legs (feet end), alternate swing */}
+        {/* Far limbs first, then near, then the torso on top so every shoulder
+            and hip joint is tucked underneath it. */}
         <Animated.View
-          style={[styles.body, { left: 90, top: 122, width: 12, height: 40, borderRadius: 6, transform: [{ rotate: swingA }] }]}
-        />
+          style={[styles.poseLayer, { transformOrigin: CRAB_HIP, transform: [{ rotate: swingA }] }]}
+        >
+          <Leg far />
+        </Animated.View>
         <Animated.View
-          style={[styles.limbFar, { left: 112, top: 122, width: 12, height: 40, borderRadius: 6, transform: [{ rotate: swingB }] }]}
-        />
-        {/* arms (under the shoulders), alternate swing */}
+          style={[styles.poseLayer, { transformOrigin: CRAB_SHOULDER, transform: [{ rotate: swingB }] }]}
+        >
+          <Arm far />
+        </Animated.View>
         <Animated.View
-          style={[styles.limbFar, { left: 138, top: 122, width: 12, height: 40, borderRadius: 6, transform: [{ rotate: swingA }] }]}
-        />
+          style={[styles.poseLayer, { transformOrigin: CRAB_HIP, transform: [{ rotate: swingB }] }]}
+        >
+          <Leg far={false} />
+        </Animated.View>
         <Animated.View
-          style={[styles.body, { left: 160, top: 122, width: 12, height: 40, borderRadius: 6, transform: [{ rotate: swingB }] }]}
-        />
+          style={[styles.poseLayer, { transformOrigin: CRAB_SHOULDER, transform: [{ rotate: swingA }] }]}
+        >
+          <Arm far={false} />
+        </Animated.View>
+        {/* Neck, drawn under both so the torso covers its base and the head
+            covers its top. Without it the head floats as a detached ball —
+            at this scale a 4px corner overlap does not read as attached. */}
+        <View style={[styles.body, { left: 164, top: 88, width: 16, height: 24, borderRadius: 8 }]} />
         {/* torso, belly up */}
-        <View style={[styles.body, { left: 78, top: 100, width: 100, height: 28, borderRadius: 14 }]} />
-        {/* head, lifted */}
-        <View style={[styles.body, { left: 170, top: 76, width: 32, height: 32, borderRadius: 16 }]} />
+        <View style={[styles.body, { left: 88, top: 98, width: 92, height: 28, borderRadius: 14 }]} />
+        {/* head, tipped back the way it is when the chest is lifted */}
+        <View style={[styles.body, { left: 168, top: 76, width: 32, height: 32, borderRadius: 16 }]} />
       </Animated.View>
     </View>
   );

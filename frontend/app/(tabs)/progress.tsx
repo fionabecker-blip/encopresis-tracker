@@ -55,7 +55,6 @@ const makeChartColors = (t: Theme) => ({
   sp: t.data.chart.spontaneous,
   enema: t.data.chart.enema,
   leaks: t.data.chart.leaks,
-  activity: t.data.chart.activity,
 });
 
 const viewOptions = [
@@ -264,19 +263,24 @@ export default function ProgressScreen() {
     });
   }, []);
 
+  // Three series only: leaks/accidents, spontaneous, and suppository-induced.
+  // Activity is still captured in the daily log, it just isn't a bowel outcome,
+  // so charting it alongside these inflated `total` and shrank the bars that matter.
   const dailyMetrics = entries.map((entry) => {
     const bmType = normalizeBmType(entry.bm_type);
     const sp = bmType.includes("sp") ? 1 : 0;
     const enema = bmType.includes("enema") ? 1 : 0;
-    const leaks = entry.leaks ? 1 : 0;
-    const activity = entry.activity_30_min ? 1 : 0;
-    const total = sp + enema + leaks + activity;
+    const leaks =
+      (entry.fecal_accidents || 0) +
+      (entry.fecal_leaks || 0) +
+      (entry.urine_accidents || 0) +
+      (entry.urine_leaks || 0);
+    const total = sp + enema + leaks;
     return {
       date: entry.date,
       sp,
       enema,
       leaks,
-      activity,
       total,
     };
   });
@@ -286,21 +290,27 @@ export default function ProgressScreen() {
       const meds = getMedList(entry.medication).map(normalizeMed);
       return meds.includes(normalizeMed(option.value));
     });
-    const leaks = related.filter((entry) => entry.leaks).length;
+    const leaks = related.reduce(
+      (sum, entry) =>
+        sum +
+        (entry.fecal_accidents || 0) +
+        (entry.fecal_leaks || 0) +
+        (entry.urine_accidents || 0) +
+        (entry.urine_leaks || 0),
+      0
+    );
     const sp = related.filter((entry) =>
       normalizeBmType(entry.bm_type).includes("sp")
     ).length;
     const enema = related.filter((entry) =>
       normalizeBmType(entry.bm_type).includes("enema")
     ).length;
-    const activity = related.filter((entry) => entry.activity_30_min).length;
-    const total = leaks + sp + enema + activity;
+    const total = leaks + sp + enema;
     return {
       label: option.label,
       sp,
       enema,
       leaks,
-      activity,
       total,
     };
   });
@@ -329,10 +339,12 @@ export default function ProgressScreen() {
 
   const getAccidents = (entry) => {
     if (!entry) return 0;
-    const fecal = entry.fecal_accidents || 0;
-    const urine = entry.urine_accidents || 0;
-    const leaks = entry.leaks ? 1 : 0;
-    return fecal + urine + leaks;
+    return (
+      (entry.fecal_accidents || 0) +
+      (entry.fecal_leaks || 0) +
+      (entry.urine_accidents || 0) +
+      (entry.urine_leaks || 0)
+    );
   };
 
   const stoolEvents = entriesInRange.filter((entry) => {
@@ -680,8 +692,13 @@ export default function ProgressScreen() {
     (sum, entry) => sum + getAccidents(entry),
     0
   );
-  const last7Leaks = last7Entries.filter((entry) => entry.leaks).length;
-  const prev7Leaks = prev7Entries.filter((entry) => entry.leaks).length;
+  const sumLeaks = (list) =>
+    list.reduce(
+      (sum, entry) => sum + (entry.fecal_leaks || 0) + (entry.urine_leaks || 0),
+      0
+    );
+  const last7Leaks = sumLeaks(last7Entries);
+  const prev7Leaks = sumLeaks(prev7Entries);
   const last7LoggedDays = last7Entries.length;
 
   const medsLoggedDays = last7Entries.filter((entry) => {
@@ -830,7 +847,7 @@ export default function ProgressScreen() {
       <ScrollView contentContainerStyle={styles.container}>
         <ScreenHeader
           title="Progress overview"
-          subtitle="Track daily outcomes or compare meds/protocol impact with activity."
+          subtitle="Track daily bowel outcomes or compare meds/protocol impact."
         />
 
         <SegmentedControl options={viewOptions} value={chartMode} onChange={setChartMode} />
@@ -938,20 +955,16 @@ export default function ProgressScreen() {
             <View style={styles.legendRow}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendSwatch, { backgroundColor: colors.sp }]} />
-                <Text style={styles.legendLabel}>SP</Text>
+                <Text style={styles.legendLabel}>Spontaneous</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendSwatch, { backgroundColor: colors.enema }]} />
-                <Text style={styles.legendLabel}>Enema</Text>
+                <Text style={styles.legendLabel}>Suppository-induced BM</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendSwatch, { backgroundColor: colors.leaks }]} />
-                <Text style={styles.legendLabel}>Leaks/Smears</Text>
+                <Text style={styles.legendLabel}>Accidents / Leaks</Text>
               </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendSwatch, { backgroundColor: colors.activity }]} />
-              <Text style={styles.legendLabel}>Activity</Text>
-            </View>
             </View>
 
             <View style={styles.chartWrapper}>
@@ -964,7 +977,6 @@ export default function ProgressScreen() {
                     const spHeight = (item.sp / maxTotal) * chartHeight;
                     const enemaHeight = (item.enema / maxTotal) * chartHeight;
                     const leaksHeight = (item.leaks / maxTotal) * chartHeight;
-                    const activityHeight = (item.activity / maxTotal) * chartHeight;
                     const showLabel = isMedsMode ? true : index % labelStep === 0;
                     return (
                       <View
@@ -996,14 +1008,6 @@ export default function ProgressScreen() {
                               ]}
                             />
                           ) : null}
-                          {item.activity ? (
-                            <View
-                              style={[
-                                styles.barSegment,
-                                { height: activityHeight, backgroundColor: colors.activity },
-                              ]}
-                            />
-                          ) : null}
                         </View>
                         <Text style={styles.barLabel} numberOfLines={2}>
                           {showLabel
@@ -1014,7 +1018,7 @@ export default function ProgressScreen() {
                         </Text>
                         {isMedsMode ? (
                           <Text style={styles.countLabel}>
-                            L{item.leaks} | S{item.sp} | E{item.enema} | A{item.activity}
+                            L{item.leaks} | S{item.sp} | E{item.enema}
                           </Text>
                         ) : null}
                       </View>

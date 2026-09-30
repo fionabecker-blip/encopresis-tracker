@@ -176,6 +176,27 @@ export async function saveThemePreference(value: ThemePreference): Promise<void>
   storage.set(THEME_KEY, value);
 }
 
+// ── Entry migration ─────────────────────────────────────────────────────────
+// Converts legacy leaks (boolean) + leak_type ("urine"|"fecal"|"both") to
+// the flat numeric fields fecal_leaks / urine_leaks.  Old fields are kept in
+// storage for backup — we just layer the new shape on top at read time.
+
+function migrateEntry(raw: Record<string, unknown>): Entry {
+  if (!("leaks" in raw)) return raw as Entry;
+
+  const entry = { ...raw } as Record<string, unknown>;
+  if (raw.leaks === true) {
+    const lt = raw.leak_type as string | undefined;
+    if (lt === "fecal" || lt === "both")
+      entry.fecal_leaks = ((entry.fecal_leaks as number) || 0) + 1;
+    if (lt === "urine" || lt === "both")
+      entry.urine_leaks = ((entry.urine_leaks as number) || 0) + 1;
+    if (!lt) // leaks=true with no type — default to fecal
+      entry.fecal_leaks = ((entry.fecal_leaks as number) || 0) + 1;
+  }
+  return entry as Entry;
+}
+
 // ── Entry storage ────────────────────────────────────────────────────────────
 
 export function generateId(): string {
@@ -188,7 +209,7 @@ export async function loadEntries(): Promise<Entry[]> {
   if (!value) return [];
   try {
     const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? parsed.map(migrateEntry) : [];
   } catch {
     return [];
   }
