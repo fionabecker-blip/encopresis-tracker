@@ -84,3 +84,6 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Claude Code local settings
+.claude/
