@@ -59,6 +59,22 @@ export default function DisclaimerScreen({ onAccept }) {
           app.
         </Text>
 
+        {/* Tinted rather than another body paragraph: this screen is a wall of
+            legal text people scroll past, and the one thing here that is about
+            the child rather than about liability should not look identical to
+            the rest. Sits directly above the checkbox, the last thing read
+            before agreeing. Matches the note in the Daily Log so the treatment
+            reads as one consistent voice. */}
+        <View style={styles.consentNote}>
+          <Text style={styles.consentNoteTitle}>Never force a suppository</Text>
+          <Text style={styles.consentNoteText}>
+            Whatever program or protocol you are following, this app’s position is
+            the same: a suppository should never be forced on a child who is
+            resisting, frightened, or saying no. Stop, and speak to your clinician
+            about other options.
+          </Text>
+        </View>
+
         <Pressable style={styles.checkboxRow} onPress={() => setChecked((prev) => !prev)}>
           <Icon
             name={checked ? "checkboxOn" : "checkboxOff"}
@@ -101,6 +117,22 @@ const makeStyles = (t: Theme) =>
       color: t.colors.textPrimary,
     },
     bodyText: {
+      ...t.typography.body,
+      color: t.colors.textPrimary,
+    },
+    // Warning tint, not danger: a guardrail, never an accusation aimed at a
+    // parent who is already having a hard day.
+    consentNote: {
+      backgroundColor: t.colors.warningTint,
+      borderRadius: t.radii.input,
+      padding: t.spacing.lg,
+      gap: t.spacing.sm,
+    },
+    consentNoteTitle: {
+      ...t.typography.sectionTitle,
+      color: t.colors.textPrimary,
+    },
+    consentNoteText: {
       ...t.typography.body,
       color: t.colors.textPrimary,
     },
