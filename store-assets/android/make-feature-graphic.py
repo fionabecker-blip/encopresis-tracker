@@ -49,15 +49,24 @@ title_f = font(74, bold=True)
 sub_f = font(33)
 
 title_1, title_2 = "The Encopresis", "Tracker"
-sub_1 = "Track the daily detail."
-sub_2 = "Export it for the doctor."
+
+# Three beats in the order the app is actually used: log, export, compare.
+# Measured at 33px they come to 294/382/518px against a 530px column (the
+# title's own width is 541px), so none of them need wrapping.
+sub_1 = "Document the daily."
+sub_2 = "Export it for your clinician."
+sub_3 = "See what works, and what doesn\u2019t."
 
 # Lay the block out from its true measured height so it sits optically centered.
+# The three subtitle lines share one colour and a tight 10px gap so they read as
+# a single sequence; varying the colour mid-list would imply a hierarchy that
+# isn't there.
 lines = [
     (title_1, title_f, TEAL_DARK, 28),
     (title_2, title_f, TEAL_DARK, 40),
-    (sub_1, sub_f, TEAL_MID, 16),
-    (sub_2, sub_f, GREY, 0),
+    (sub_1, sub_f, TEAL_MID, 10),
+    (sub_2, sub_f, TEAL_MID, 10),
+    (sub_3, sub_f, TEAL_MID, 0),
 ]
 total = sum(
     draw.textbbox((0, 0), t, font=f)[3] - draw.textbbox((0, 0), t, font=f)[1] + gap
@@ -70,6 +79,8 @@ for text, f, color, gap in lines:
     draw.text((text_x - bb[0], y - bb[1]), text, font=f, fill=color)
     y += (bb[3] - bb[1]) + gap
 
-out = "/tmp/play-feature-graphic-1024x500.png"
+# Write the committed asset directly. Writing to /tmp meant the documented
+# regenerate command left the uploaded graphic stale.
+out = "/Users/fionabecker/Documents/encopresis-tracker/store-assets/android/feature-graphic-1024x500.png"
 canvas.save(out, "PNG")
 print("wrote", out, canvas.size)
