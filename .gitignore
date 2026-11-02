@@ -76,6 +76,11 @@ agenthub/agents/youtube/db
 # Build caches
 .cache/
 
+# Store build artifacts downloaded from EAS. ~75MB each, and always
+# re-downloadable from the EAS build page, so they don't belong in git.
+build-artifacts/
+*.aab
+
 # Mobile development
 android-sdk/ 
 .env
