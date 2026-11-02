@@ -517,6 +517,19 @@ export default function LogScreen() {
             }
           >
             <SegmentedControl options={bmOptions} value={bmType} onChange={setBmType} />
+            {/* Shown at the moment a suppository is being logged rather than
+                buried in a settings screen, because that is when it matters.
+                Deliberately names no program: the position holds whatever
+                protocol the family is following. */}
+            {bmType === "enema" ? (
+              <View style={styles.consentNote}>
+                <Text style={styles.consentNoteText}>
+                  Never force it. If your child is resisting, frightened, or saying
+                  no, stop and ask your clinician about other options. No protocol
+                  is worth holding a child down for.
+                </Text>
+              </View>
+            ) : null}
             {bmType !== "none" ? (
               <View style={styles.stack}>
                 <TextField
@@ -985,6 +998,19 @@ const makeStyles = (t: Theme) =>
     helperText: {
       ...t.typography.caption,
       color: t.colors.textMuted,
+    },
+    // Warning tint, not danger: this must read as a guardrail, never as an
+    // accusation aimed at a parent who is already having a hard day.
+    consentNote: {
+      backgroundColor: t.colors.warningTint,
+      // input radius, not card: this box is nested inside a Card.
+      borderRadius: t.radii.input,
+      padding: t.spacing.md,
+      marginTop: t.spacing.sm,
+    },
+    consentNoteText: {
+      ...t.typography.caption,
+      color: t.colors.textPrimary,
     },
     subLabel: {
       ...t.typography.caption,

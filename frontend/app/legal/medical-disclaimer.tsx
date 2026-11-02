@@ -30,6 +30,23 @@ export default function MedicalDisclaimerScreen() {
           not responsible for medical decisions or health outcomes related to use of
           this app.
         </Text>
+
+        <Text style={styles.heading}>Never force a suppository</Text>
+        <Text style={styles.body}>
+          Whatever program or protocol you are following, this app’s position is the
+          same: a suppository should never be forced on a child who is resisting,
+          frightened, or saying no.
+        </Text>
+        <Text style={styles.body}>
+          If that is happening, stop and speak to your clinician. Ask about other
+          options — a different medication, a different dose, or a different
+          approach.
+        </Text>
+        <Text style={styles.body}>
+          This app records what happened. It will never ask you to override your
+          child, and a skipped day logged honestly is more useful to you and your
+          clinician than a forced one.
+        </Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -51,6 +68,10 @@ const makeStyles = (t: Theme) =>
     },
     body: {
       ...t.typography.body,
+      color: t.colors.textPrimary,
+    },
+    heading: {
+      ...t.typography.sectionTitle,
       color: t.colors.textPrimary,
     },
   });
