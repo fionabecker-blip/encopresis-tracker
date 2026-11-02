@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import { loadEntries, loadSettings } from "../utils/storage";
 import type { Entry } from "../types";
 import { useTheme } from "../../src/theme/useTheme";
@@ -253,9 +254,16 @@ export default function ProgressScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
+  // Reload on focus, not on mount: Expo Router keeps tab screens mounted, so a
+  // mount-only effect reads storage once per app launch and the charts, streaks
+  // and exported report would all silently omit days saved since then.
+  // The wrapper matters: fetchEntries is async, and useFocusEffect treats a
+  // returned value as its cleanup function.
+  useFocusEffect(
+    useCallback(() => {
+      fetchEntries();
+    }, [fetchEntries])
+  );
 
   useEffect(() => {
     loadSettings().then((settings) => {

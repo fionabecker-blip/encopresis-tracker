@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system/legacy";
@@ -130,9 +131,15 @@ export default function HistoryScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
+  // Expo Router keeps tab screens mounted, so a mount-only effect would read
+  // storage once per app launch and the list would never show newly saved days.
+  // The wrapper matters: fetchEntries is async, and useFocusEffect treats a
+  // returned value as its cleanup function.
+  useFocusEffect(
+    useCallback(() => {
+      fetchEntries();
+    }, [fetchEntries])
+  );
 
   const formatNumber = (value) => {
     if (value === null || value === undefined) return "Not logged";

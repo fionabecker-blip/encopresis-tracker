@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
@@ -232,9 +233,13 @@ export default function LogScreen() {
   const [status, setStatus] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadSettings().then(setSettings);
-  }, []);
+  // On focus, so meds and foods added in Settings appear as chips without a
+  // relaunch. Expo Router keeps this screen mounted once visited.
+  useFocusEffect(
+    useCallback(() => {
+      loadSettings().then(setSettings);
+    }, [])
+  );
 
   // Build the active meds option list: built-in + user's recurring custom meds + "Other".
   const customMeds = (settings.customMeds || []) as string[];

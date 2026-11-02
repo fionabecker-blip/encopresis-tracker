@@ -1,12 +1,62 @@
-# Known issues — fix before/with the next build (1.0.3)
+# Known issues — fix before/with the next build
 
-**Current shipped version: 1.0.2** (`frontend/app.json`). The AAB in Play closed testing is built from 1.0.2.
+**Version in `frontend/app.json`: 1.0.3.** `versionCode` is not in this file — `frontend/eas.json` sets `appVersionSource: "remote"` with `autoIncrement` on the production profile, so EAS stamps it.
 
 > **REMINDER: these require a new build.** Bump `version` in `frontend/app.json`, run `eas build -p android --profile production`, and upload the new AAB. None of these are fixed by editing store copy.
->
-> Best window to do this is **during the 14-day closed-testing period**, so it doesn't delay the tester clock. Do not rebuild before the closed-testing release is live — that clock is the critical path to production.
 
-All three issues are in the pediatrician-report pattern detection, `frontend/app/(tabs)/progress.tsx` lines 604-631.
+**Plan changed 2026-11-01.** The earlier plan was to ship 1.0.2 to closed testing and patch during the 14-day window. Reversed once issue 0 was found: 1.0.3 is being built *before* the first closed-testing release.
+
+**Why:** the 14 days runs on 12 testers staying opted in, and pushing a newer AAB to the same track mid-window doesn't restart it — so "patch later" bought almost nothing. Meanwhile 1.0.2 would have shown all 12 testers an app that looks like it lost their data on day one. Recruiting the testers is the real bottleneck, not the 20-minute build.
+
+Issue 0 is a data-visibility bug affecting History and Progress. Issues 1-3 are in the pediatrician-report pattern detection, `frontend/app/(tabs)/progress.tsx` lines 604-631.
+
+---
+
+## 0. FIXED in 1.0.3 — History and Progress never refreshed; the app looked like it lost your data
+
+**Fixed 2026-11-01, not yet verified on a device.** Confirm before trusting it: log a day, switch tabs to History *without* force-quitting, and check the day appears.
+
+Found 2026-11-01 while logging demo days for store screenshots. Entries saved correctly and the "Saved for \<date\>" toast fired, but History kept showing a months-old snapshot. The data was never lost — the screen simply never read storage again.
+
+`frontend/app/(tabs)/history.tsx` lines 116-135:
+
+```js
+const fetchEntries = useCallback(async () => { ... }, []);  // stable identity
+useEffect(() => { fetchEntries(); }, [fetchEntries]);        // therefore runs ONCE
+```
+
+The dependency array on `useCallback` is empty, so `fetchEntries` keeps the same identity for the life of the component, so the effect never re-fires. Expo Router keeps tab screens mounted after first visit, so the list is read exactly once per app launch. `frontend/app/(tabs)/progress.tsx` lines 255-258 have the identical pattern.
+
+At the time of the report, `useFocusEffect` appeared zero times anywhere in `frontend/app/(tabs)/`.
+
+Severity was high and not cosmetic. The core loop of the app is *log a day, then look at it*. A parent logs an entry, opens History, sees nothing, and concludes the app threw their data away. For a tracking app whose entire pitch is "keeps the record for you", that is the worst possible first impression — and it generates one-star reviews that read as data loss even though nothing is lost.
+
+Workaround on 1.0.2: force-quit and reopen the app.
+
+**What shipped:** reload on focus rather than on mount, in all three tabs.
+
+```js
+import { useFocusEffect } from "expo-router";
+useFocusEffect(useCallback(() => { fetchEntries(); }, [fetchEntries]));
+```
+
+- `history.tsx` — entry list reloads on focus
+- `progress.tsx` — charts, streaks and the exported PDF reload on focus
+- `index.tsx` — `loadSettings` moved to focus, so custom meds and foods added in Settings appear as chips without a relaunch
+
+**Do not collapse this to `useFocusEffect(fetchEntries)`.** `fetchEntries` is `async`, so it returns a Promise, and `useFocusEffect` treats any returned value as its cleanup function — its declared type is `() => undefined | void | (() => void)`. The `useCallback` wrapper that discards the return value is load-bearing, not style.
+
+### 0a. STILL OPEN — the Daily Log is write-only
+
+**Not fixed in 1.0.3.** Picking a date that already has an entry shows a blank form — nothing loads the existing entry for the selected date. Combined with issue 0 this is what made the data look missing. Worth considering whether selecting a date should load that day's entry for editing.
+
+### 0b. STILL OPEN — saving the same date twice creates a duplicate
+
+**Not fixed in 1.0.3,** and now easier to hit: with issue 0 fixed, users can actually see their entries, so they are more likely to go back to a date and re-save it.
+
+`saveEntry` matches on `entry.id`, and `handleSubmit` calls `generateId()` fresh every time, so the id never matches an existing row and the entry is appended rather than replaced. Two entries for one date both count toward accident totals and both render in History. Should match on `date`, or load-and-update when the date already exists.
+
+These two are related and should be fixed together: loading the existing entry on date-select (0a) naturally gives `handleSubmit` an existing `id` to reuse, which fixes 0b.
 
 ---
 
